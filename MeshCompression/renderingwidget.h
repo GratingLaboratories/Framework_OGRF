@@ -93,11 +93,8 @@ public:
 	bool						is_draw_axes_;
     bool                        is_low_poly;
 
-    // Option
-    bool                        render_option_low_poly;
-
 private:
-	
+    QColor                      background_color_;
 };
 
 #endif // RENDERINGWIDGET_H

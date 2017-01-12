@@ -32,7 +32,8 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     is_draw_face_(false),
     is_draw_texture_(false),
     is_low_poly(false),
-    has_lighting_(false)
+    has_lighting_(false),
+    background_color_(40, 40, 80)
 {
 	ptr_arcball_ = new CArcBall(width(), height());
 
@@ -110,6 +111,11 @@ void RenderingWidget::paintGL()
 	glPushMatrix();
 
 	glMultMatrixf(ptr_arcball_->GetBallMatrix());
+
+    glClearColor(background_color_.red() / 256.0f,
+        background_color_.green() / 256.0f,
+        background_color_.blue() / 256.0f,
+        0.0);
 
 	Render();
 	glPopMatrix();
@@ -256,6 +262,8 @@ void RenderingWidget::SetBackground()
 	GLfloat b = (color.blue()) / 255.0f;
 	GLfloat alpha = color.alpha() / 255.0f;
 	glClearColor(r, g, b, alpha);
+    background_color_ = color;
+
 	updateGL();
 }
 
