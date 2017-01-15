@@ -71,12 +71,12 @@ void CompressionSolution::compress(int precision)
     }
 
     // Build a Sparse Matrix Builder vector.
-    // TODO: current change
+    // Version 1.1 change
     // make Laplacian symmetric.
     vector<Triple> mat_builder_Laplacian;
     for (int row = 0; row < num_verts_; row++)
     {
-        /*  <original>
+        /*  <original(1.0)>
         mat_builder_Laplacian.push_back({ row, row, 1.0f });
         float value = -1.0f / degrees_[row];
         for (int col = 0; col < num_verts_; col++)
