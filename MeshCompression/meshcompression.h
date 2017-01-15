@@ -28,8 +28,8 @@ protected:
     void keyReleaseEvent(QKeyEvent *e);
 
     public slots:
-    void ShowMeshInfo(int npoint, int nedge, int nface);
-    void OpenFile();
+    void ShowMeshInfo(int npoint, int nedge, int nface) const;
+    void OpenFile() const;
     void ShowAbout();
 
 private:
@@ -57,7 +57,7 @@ private:
     QAction                         *action_convert_;
     QAction                         *action_param_;
 
-    // Render RadioButtons
+    // Render CheckBoxs
     QCheckBox						*checkbox_point_;
     QCheckBox						*checkbox_edge_;
     QCheckBox						*checkbox_face_;
@@ -65,10 +65,18 @@ private:
     QCheckBox						*checkbox_texture_;
     QCheckBox						*checkbox_axes_;
 
-    QCheckBox                       *checkbox_lowpoly;
+    // Option CheckBoxs
+    QCheckBox                       *checkbox_lowpoly_;
+    QCheckBox                       *checkbox_show_result_;  
+    QCheckBox                       *checkbox_show_diff_;    
+
+    // Control
+    QPushButton                     *pushbutton_compress_;
+    QLineEdit                       *lineedit_compress_precision_; 
 
     QGroupBox						*groupbox_render_;
     QGroupBox						*groupbox_option_;
+    QGroupBox                       *groupbox_control_;
 
     // Information
     QLabel							*label_meshinfo_;

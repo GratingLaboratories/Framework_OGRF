@@ -7,7 +7,7 @@ MeshCompression::MeshCompression(QWidget *parent)
     : QMainWindow(parent)
 {
     renderingwidget_ = new RenderingWidget(this);
-    renderingwidget_->grabKeyboard();
+    //renderingwidget_->grabKeyboard();
     setCentralWidget(new QWidget);
 
     //setGeometry(300, 150, 800, 600);
@@ -21,9 +21,11 @@ MeshCompression::MeshCompression(QWidget *parent)
 
     QVBoxLayout *layout_left = new QVBoxLayout;
     layout_left->addWidget(groupbox_render_);
+    layout_left->addStretch(1);
+    layout_left->addWidget(groupbox_option_);    
+    layout_left->addStretch(1);
+    layout_left->addWidget(groupbox_control_);
     layout_left->addStretch(2);
-    layout_left->addWidget(groupbox_option_);
-    layout_left->addStretch(4);
 
     QHBoxLayout *layout_main = new QHBoxLayout;
 
@@ -67,8 +69,8 @@ void MeshCompression::CreateActions()
     connect(action_loadmesh_, SIGNAL(triggered()), renderingwidget_, SLOT(ReadMesh()));
     connect(action_loadtexture_, SIGNAL(triggered()), renderingwidget_, SLOT(LoadTexture()));
     connect(action_background_, SIGNAL(triggered()), renderingwidget_, SLOT(SetBackground()));
-    connect(action_convert_, SIGNAL(triggered()), renderingwidget_, SLOT(Convert()));
-    connect(action_param_, SIGNAL(triggered()), renderingwidget_, SLOT(Param()));
+    //connect(action_convert_, SIGNAL(triggered()), renderingwidget_, SLOT(Convert()));
+    //connect(action_param_, SIGNAL(triggered()), renderingwidget_, SLOT(Param()));
 }
 
 void MeshCompression::CreateMenus()
@@ -115,6 +117,7 @@ void MeshCompression::CreateStatusBar()
 
 void MeshCompression::CreateRenderGroup()
 {
+    // Group Render
     checkbox_point_ = new QCheckBox(tr("Point"), this);
     connect(checkbox_point_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawPoint(bool)));
     checkbox_point_->setChecked(true);
@@ -137,11 +140,27 @@ void MeshCompression::CreateRenderGroup()
 
     groupbox_render_ = new QGroupBox(tr("Render"), this);
 
-    checkbox_lowpoly = new QCheckBox(tr("Low Poly"), this);
-    connect(checkbox_lowpoly, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLowPoly(bool)));
+    // Group Option
+    checkbox_lowpoly_ = new QCheckBox(tr("Low Poly"), this);
+    connect(checkbox_lowpoly_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLowPoly(bool)));
+    checkbox_show_result_ = new QCheckBox(tr("Show Result"), this);
+    connect(checkbox_show_result_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowResult(bool)));
+    checkbox_show_diff_ = new QCheckBox(tr("Show Difference"), this);
+    connect(checkbox_show_diff_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowDiff(bool)));
 
-    groupbox_option_ = new QGroupBox(tr("Options"), this);
+    groupbox_option_ = new QGroupBox(tr("View"), this);
 
+    // Group Control
+    pushbutton_compress_ = new QPushButton(tr("Compress"), this);
+    connect(pushbutton_compress_, SIGNAL(clicked()), renderingwidget_, SLOT(Compress()));
+
+    lineedit_compress_precision_ = new QLineEdit(tr("100"), this);
+    connect(lineedit_compress_precision_, SIGNAL(textChanged(const QString&)),
+        renderingwidget_, SLOT(ChangePrecision(const QString&)));
+
+    groupbox_control_ = new QGroupBox("Control", this);
+
+    // Layout for Group Boxes
     QVBoxLayout* render_layout = new QVBoxLayout(groupbox_render_);
     render_layout->addWidget(checkbox_point_);
     render_layout->addWidget(checkbox_edge_);
@@ -151,7 +170,13 @@ void MeshCompression::CreateRenderGroup()
     render_layout->addWidget(checkbox_axes_);
 
     QVBoxLayout* option_layout = new QVBoxLayout(groupbox_option_);
-    option_layout->addWidget(checkbox_lowpoly);
+    option_layout->addWidget(checkbox_lowpoly_);
+    option_layout->addWidget(checkbox_show_result_);
+    option_layout->addWidget(checkbox_show_diff_);
+
+    QVBoxLayout* control_layout = new QVBoxLayout(groupbox_control_);
+    control_layout->addWidget(pushbutton_compress_);
+    control_layout->addWidget(lineedit_compress_precision_);
 }
 
 void MeshCompression::keyPressEvent(QKeyEvent *e)
@@ -164,12 +189,12 @@ void MeshCompression::keyReleaseEvent(QKeyEvent *e)
 
 }
 
-void MeshCompression::ShowMeshInfo(int npoint, int nedge, int nface)
+void MeshCompression::ShowMeshInfo(int npoint, int nedge, int nface) const
 {
     label_meshinfo_->setText(QString("Mesh: p: %1 e: %2 f: %3\t").arg(npoint).arg(nedge).arg(nface));
 }
 
-void MeshCompression::OpenFile()
+void MeshCompression::OpenFile() const
 {
 
 }

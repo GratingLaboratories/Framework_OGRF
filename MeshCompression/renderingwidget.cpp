@@ -5,10 +5,12 @@
 #include <QFileDialog>
 #include <iostream>
 #include <QTextCodec>
+#include <SOIL/SOIL.h>
 #include "ArcBall.h"
 #include "globalFunctions.h"
 #include "HE_mesh/Vec.h"
-#include <SOIL/SOIL.h>
+#include "CompressionSolution.h"
+#include "PsudoColorRGB.h"
 
 #define updateGL update
 
@@ -22,6 +24,7 @@
 #define INF                 9.9e9f
 
 typedef trimesh::vec3  Vec3f;
+using Vec3f_om = OpenMesh::Vec3f;
 
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     QOpenGLWidget(parent),
@@ -31,10 +34,17 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     is_draw_edge_(true),
     is_draw_face_(false),
     is_draw_texture_(false),
-    is_low_poly(false),
+    is_low_poly_(false),
+    is_show_result_(false),
+    is_show_diff_(false),
     has_lighting_(false),
-    background_color_(40, 40, 80)
+    background_color_(40, 40, 80),
+    precision_(100),
+    compress_ok(false),
+    max_difference(0)
 {
+    setFocusPolicy(Qt::StrongFocus);
+
 	ptr_arcball_ = new CArcBall(width(), height());
 
 	is_load_texture_ = false;
@@ -268,7 +278,7 @@ void RenderingWidget::SetBackground()
 }
 
 
-void mesh_unify(MyMesh &mesh, float scale = 1.0)
+void mesh_unify(TriMesh &mesh, float scale = 1.0)
 {
     Vec3f max_pos(-INF, -INF, -INF);
     Vec3f min_pos(+INF, +INF, +INF);
@@ -368,6 +378,9 @@ void RenderingWidget::ReadMesh()
 	//	m_pMesh->LoadFromOBJFile(filename.toLatin1().data());
 	emit(operatorInfo(QString("Read Mesh from") + filename + QString(" Done")));
 	emit(meshInfo(mesh_.n_vertices(), mesh_.n_edges(), mesh_.n_faces()));
+    
+    // mark compress state after mesh changed.
+    compress_ok = false;
 
 	updateGL();
 }
@@ -442,23 +455,60 @@ void RenderingWidget::LoadTexture()
 		GL_RGBA, GL_UNSIGNED_BYTE, tex1.bits());
     */
 	is_load_texture_ = true;
-	emit(operatorInfo(QString("Load Texture from ") + filename + QString(" Done")));
+	emit operatorInfo(QString("Load Texture from ") + filename + QString(" Done"));
 }
 
-void RenderingWidget::Convert()
+void RenderingWidget::Compress()
 {
     if (mesh_.vertices_empty())
+    {
+        emit operatorInfo(QString("Compress return: empty mesh."));
         return;
+    }
 
-    //GlobalMiniSurf gms;
-    //gms.minimize(mesh_);
+    // Main Logic for Compression.
+    CompressionSolution cs{ mesh_ };
+    cs.compress(precision_);
+    if(cs.ok())
+    {
+        // Success.
+        position_map_ = cs.getCompressedPositions();
+        difference_map_ = cs.getCompressedDifferences();
+        max_difference = cs.getMaxDifference();
+        compress_ok = true;
+        emit operatorInfo(QString("Compress() with precision = %0.").arg(precision_));
+    }
+    else
+    {
+        // Fail.
+        compress_ok = false;
+        emit operatorInfo(QString("Compress fail with msg = \"%0\"").arg(cs.msg()));
+    }
     updateGL();
-    return;
+}
 
+void RenderingWidget::ChangePrecision(const QString& text)
+{
+    // Change Precision
+    int number;
+    bool ok;
+    number = text.toInt(&ok, 10); // extract number with base 10;
+    if (!ok)
+    {
+        emit operatorInfo(QString("Not a Integer, input=") + text);
+        return;
+    }
+    if (number <= 0)
+    {
+        emit operatorInfo(QString("Invalid input, input=") + text);
+        return;
+    }
+    precision_ = number;
+    emit operatorInfo(QString("Change precision to %0").arg(number));
 }
 
 // For reference.
-//void param_show(MyMesh &mesh, ParamSurf &param, int size = 512, int bdr = 10)
+//void param_show(TriMesh &mesh, ParamSurf &param, int size = 512, int bdr = 10)
 //{
 //    const int img_size = size;
 //    const int bdr_size = bdr;
@@ -562,7 +612,19 @@ void RenderingWidget::CheckDrawAxes(bool bV)
 
 void RenderingWidget::CheckLowPoly(bool bv)
 {
-    is_low_poly = bv;
+    is_low_poly_ = bv;
+    updateGL();
+}
+
+void RenderingWidget::CheckShowResult(bool bv)
+{
+    is_show_result_ = bv;
+    updateGL();
+}
+
+void RenderingWidget::CheckShowDiff(bool bv)
+{
+    is_show_diff_ = bv;
     updateGL();
 }
 
@@ -626,6 +688,8 @@ void RenderingWidget::DrawPoints(bool bv)
     for (auto v : mesh_.vertices())
     {
         auto pos = mesh_.point(v);
+        if (is_show_result_ && compress_ok)
+            pos = position_map_[v];
         auto nor = mesh_.normal(v);
         glNormal3fv(nor.data());
         glVertex3fv(pos.data());
@@ -650,6 +714,10 @@ void RenderingWidget::DrawEdge(bool bv)
         {
             auto v = mesh_.to_vertex_handle(he);
             glNormal3fv(mesh_.normal(v).data());
+            if (is_show_result_ && compress_ok)
+                glVertex3fv(position_map_[v].data());
+            else
+                glVertex3fv(mesh_.point(v).data());
             glVertex3fv(mesh_.point(v).data());
 
             he = mesh_.next_halfedge_handle(he);
@@ -685,8 +753,8 @@ void RenderingWidget::DrawFace(bool bv)
 
     glBegin(GL_TRIANGLES);
 
-    if (!is_low_poly)
-    {   // Normal
+    if (is_show_result_ && compress_ok)
+    {   // Show Result Mode
         for (auto f : mesh_.faces())
         {
             auto he = mesh_.halfedge_handle(f);
@@ -694,6 +762,50 @@ void RenderingWidget::DrawFace(bool bv)
             {
                 auto v = mesh_.to_vertex_handle(he);
                 glNormal3fv(mesh_.normal(v).data());
+                glVertex3fv(position_map_[v].data());
+
+                he = mesh_.next_halfedge_handle(he);
+            } while (he != mesh_.halfedge_handle(f));
+        }
+    }
+    else if (is_show_diff_ && compress_ok)
+    {   // Show diff Mode
+        CPseudoColorRGB  Psdc;  // 定义计算colormap对象
+
+        Psdc.SetPCRamp(0.0, 1.0);
+        Psdc.SetPCType(PCT_JET);    // 变换类型：红绿蓝
+        Psdc.SetPCValueRange(0.0, 1.0); // 定义范围
+
+        // 示范：如何计算值value所对应的rgb颜色
+        double color[3];
+        double value;
+        //Psdc.GetPC(color, value);  // 返回的color值范围为[0,255]
+
+        for (auto f : mesh_.faces())
+        {
+            auto he = mesh_.halfedge_handle(f);
+            do
+            {
+                auto v = mesh_.to_vertex_handle(he);
+                glNormal3fv(mesh_.normal(v).data());
+                Psdc.GetPC(color, difference_map_[v] / max_difference);
+                glColor3f(color[0], color[1], color[2]);
+                glVertex3fv(mesh_.point(v).data());
+
+                he = mesh_.next_halfedge_handle(he);
+            } while (he != mesh_.halfedge_handle(f));
+        }
+    }
+    else if (!is_low_poly_)
+    {   // Normal Mode
+        for (auto f : mesh_.faces())
+        {
+            auto he = mesh_.halfedge_handle(f);
+            do
+            {
+                auto v = mesh_.to_vertex_handle(he);
+                glNormal3fv(mesh_.normal(v).data());
+                glColor3f(1.0f, 1.0f, 1.0f);
                 glVertex3fv(mesh_.point(v).data());
 
                 he = mesh_.next_halfedge_handle(he);
@@ -722,6 +834,7 @@ void RenderingWidget::DrawFace(bool bv)
             {
                 auto v = mesh_.to_vertex_handle(he);
                 glNormal3fv(average_normal.data());
+                glColor3f(1.0f, 1.0f, 1.0f);
                 glVertex3fv(mesh_.point(v).data());
 
                 he = mesh_.next_halfedge_handle(he);

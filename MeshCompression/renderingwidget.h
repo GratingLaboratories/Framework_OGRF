@@ -1,14 +1,15 @@
 #ifndef RENDERINGWIDGET_H
 #define RENDERINGWIDGET_H
 
-#include "HE_mesh/Vec.h"
-
 #include <QOpenGLWidget>
+
+#include "HE_mesh/Vec.h"
+#include "CompressionSolution.h"
 
 using trimesh::vec;
 using trimesh::point;
 
-typedef OpenMesh::TriMesh_ArrayKernelT<>  MyMesh;
+typedef OpenMesh::TriMesh_ArrayKernelT<>  TriMesh;
 
 class MainWindow;
 class CArcBall;
@@ -47,12 +48,13 @@ private:
 	void Render();
 	void SetLight();
 
-	public slots:
+public slots:
 	void SetBackground();
 	void ReadMesh();
 	void WriteMesh();
 	void LoadTexture();
-    void Convert();
+    void Compress();
+    void ChangePrecision(const QString &text);
 
 	void CheckDrawPoint(bool bv);
 	void CheckDrawEdge(bool bv);
@@ -61,7 +63,9 @@ private:
 	void CheckDrawTexture(bool bv);
 	void CheckDrawAxes(bool bv);
     void CheckLowPoly(bool bv);
-
+    void CheckShowResult(bool bv);
+    void CheckShowDiff(bool bv);
+    
 private:
 	void DrawAxes(bool bv);
 	void DrawPoints(bool);
@@ -72,7 +76,7 @@ private:
 public:
 	MainWindow					*ptr_mainwindow_;
 	CArcBall					*ptr_arcball_;
-    MyMesh                      mesh_;
+    TriMesh                      mesh_;
 
 	// Texture
 	GLuint						texture_[1];
@@ -91,10 +95,17 @@ public:
 	bool						is_draw_texture_;
 	bool						has_lighting_;
 	bool						is_draw_axes_;
-    bool                        is_low_poly;
+    bool                        is_low_poly_;
+    bool                        is_show_result_;
+    bool                        is_show_diff_;
 
 private:
     QColor                      background_color_;
+    int                         precision_;
+    PositionMap                 position_map_;
+    DifferenceMap               difference_map_;
+    float                       max_difference;
+    bool                        compress_ok;
 };
 
 #endif // RENDERINGWIDGET_H
