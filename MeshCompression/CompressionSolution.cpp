@@ -71,11 +71,24 @@ void CompressionSolution::compress(int precision)
     }
 
     // Build a Sparse Matrix Builder vector.
+    // TODO: current change
+    // make Laplacian symmetric.
     vector<Triple> mat_builder_Laplacian;
     for (int row = 0; row < num_verts_; row++)
     {
+        /*  <original>
         mat_builder_Laplacian.push_back({ row, row, 1.0f });
         float value = -1.0f / degrees_[row];
+        for (int col = 0; col < num_verts_; col++)
+        {
+            if (adjacency_[row][col])
+            {
+                mat_builder_Laplacian.push_back({ row, col, value });
+            }
+        }  
+        */      
+        mat_builder_Laplacian.push_back({ row, row, static_cast<float>(degrees_[row]) });
+        float value = -1.0f;
         for (int col = 0; col < num_verts_; col++)
         {
             if (adjacency_[row][col])
@@ -164,7 +177,7 @@ bool CompressionSolution::MATLABsubroutine(
     // MATLAB script
     engEvalString(ep, "Lap = sparse(LapRow, LapCol, LapVal);");
     engEvalString(ep, "[V, D] = eigs(Lap, size(Lap, 1));");
-    engEvalString(ep, "Coef = inv(V) * [X, Y, Z];");
+    engEvalString(ep, "Coef = V' * [X, Y, Z];");
     engEvalString(ep, "Geo = V(:, 1:p) * Coef(1:p, :);");
     engEvalString(ep, "Diff = sum(([X Y Z] - Geo).^ 2, 2).^ (0.5)");
     engEvalString(ep, "X_ = Geo(:, 1);");
