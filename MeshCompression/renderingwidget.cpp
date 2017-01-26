@@ -34,15 +34,17 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     is_draw_edge_(true),
     is_draw_face_(false),
     is_draw_texture_(false),
+    has_lighting_(false),
     is_low_poly_(false),
     is_show_result_(false),
     is_show_diff_(false),
-    has_lighting_(false),
     background_color_(40, 40, 80),
     precision_(100),
-    compress_ok(false),
-    max_difference_(0)
+    max_difference_(0),
+    compress_ok_(false)
 {
+    // Set the focus policy to Strong, 
+    // then the renderingWidget can accept keyboard input event and response.
     setFocusPolicy(Qt::StrongFocus);
 
 	ptr_arcball_ = new CArcBall(width(), height());
@@ -76,7 +78,6 @@ void RenderingWidget::initializeGL()
 	glClearDepth(1);
 
 	SetLight();
-
 }
 
 void RenderingWidget::resizeGL(int w, int h)
@@ -380,7 +381,7 @@ void RenderingWidget::ReadMesh()
 	emit(meshInfo(mesh_.n_vertices(), mesh_.n_edges(), mesh_.n_faces()));
     
     // mark compress state after mesh changed.
-    compress_ok = false;
+    compress_ok_ = false;
 
 	updateGL();
 }
@@ -475,13 +476,13 @@ void RenderingWidget::Compress()
         position_map_ = cs.getCompressedPositions();
         difference_map_ = cs.getCompressedDifferences();
         max_difference_ = cs.getMaxDifference();
-        compress_ok = true;
+        compress_ok_ = true;
         emit operatorInfo(QString("Compress() with precision = %0.").arg(precision_));
     }
     else
     {
         // Fail.
-        compress_ok = false;
+        compress_ok_ = false;
         emit operatorInfo(QString("Compress fail with msg = \"%0\"").arg(cs.msg()));
     }
     updateGL();
@@ -688,7 +689,7 @@ void RenderingWidget::DrawPoints(bool bv)
     for (auto v : mesh_.vertices())
     {
         auto pos = mesh_.point(v);
-        if (is_show_result_ && compress_ok)
+        if (is_show_result_ && compress_ok_)
             pos = position_map_[v];
         auto nor = mesh_.normal(v);
         glNormal3fv(nor.data());
@@ -714,7 +715,7 @@ void RenderingWidget::DrawEdge(bool bv)
         {
             auto v = mesh_.to_vertex_handle(he);
             glNormal3fv(mesh_.normal(v).data());
-            if (is_show_result_ && compress_ok)
+            if (is_show_result_ && compress_ok_)
                 glVertex3fv(position_map_[v].data());
             else
                 glVertex3fv(mesh_.point(v).data());
@@ -752,7 +753,7 @@ void RenderingWidget::DrawFace(bool bv)
 
     glBegin(GL_TRIANGLES);
 
-    if (is_show_result_ && compress_ok)
+    if (is_show_result_ && compress_ok_)
     {   // Show Result Mode
         for (auto f : mesh_.faces())
         {
@@ -767,7 +768,7 @@ void RenderingWidget::DrawFace(bool bv)
             } while (he != mesh_.halfedge_handle(f));
         }
     }
-    else if (is_show_diff_ && compress_ok)
+    else if (is_show_diff_ && compress_ok_)
     {   // Show diff Mode
         CPseudoColorRGB  Psdc;  // 定义计算colormap对象
 

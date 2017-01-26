@@ -105,7 +105,7 @@ private:
     PositionMap                 position_map_;
     DifferenceMap               difference_map_;
     float                       max_difference_;
-    bool                        compress_ok;
+    bool                        compress_ok_;
 };
 
 #endif // RENDERINGWIDGET_H
