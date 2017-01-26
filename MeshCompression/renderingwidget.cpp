@@ -14,8 +14,8 @@
 
 #define updateGL update
 
-#define DEBUG_BIG_POINT     0
-#define DEBUG_COLOR_POINT   0
+#define DEBUG_BIG_POINT     false
+#define DEBUG_COLOR_POINT   false
 
 #define ITERATION_MINIMUM   50
 #define ITERATION_LIMIT     1000
