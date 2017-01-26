@@ -104,7 +104,7 @@ private:
     int                         precision_;
     PositionMap                 position_map_;
     DifferenceMap               difference_map_;
-    float                       max_difference;
+    float                       max_difference_;
     bool                        compress_ok;
 };
 

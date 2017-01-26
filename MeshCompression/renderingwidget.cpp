@@ -41,7 +41,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     background_color_(40, 40, 80),
     precision_(100),
     compress_ok(false),
-    max_difference(0)
+    max_difference_(0)
 {
     setFocusPolicy(Qt::StrongFocus);
 
@@ -474,7 +474,7 @@ void RenderingWidget::Compress()
         // Success.
         position_map_ = cs.getCompressedPositions();
         difference_map_ = cs.getCompressedDifferences();
-        max_difference = cs.getMaxDifference();
+        max_difference_ = cs.getMaxDifference();
         compress_ok = true;
         emit operatorInfo(QString("Compress() with precision = %0.").arg(precision_));
     }
@@ -718,7 +718,6 @@ void RenderingWidget::DrawEdge(bool bv)
                 glVertex3fv(position_map_[v].data());
             else
                 glVertex3fv(mesh_.point(v).data());
-            glVertex3fv(mesh_.point(v).data());
 
             he = mesh_.next_halfedge_handle(he);
         } while (he != mesh_.halfedge_handle(f));
@@ -788,7 +787,7 @@ void RenderingWidget::DrawFace(bool bv)
             {
                 auto v = mesh_.to_vertex_handle(he);
                 glNormal3fv(mesh_.normal(v).data());
-                Psdc.GetPC(color, difference_map_[v] / max_difference);
+                Psdc.GetPC(color, difference_map_[v] / max_difference_);
                 glColor3f(color[0], color[1], color[2]);
                 glVertex3fv(mesh_.point(v).data());
 
