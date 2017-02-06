@@ -41,7 +41,8 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     background_color_(40, 40, 80),
     precision_(100),
     max_difference_(0),
-    compress_ok_(false)
+    compress_ok_(false),
+    msg(std::cout)
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
@@ -55,6 +56,8 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 	eye_goal_[0] = eye_goal_[1] = eye_goal_[2] = 0.0;
 	eye_direction_[0] = eye_direction_[1] = 0.0;
 	eye_direction_[2] = 1.0;
+
+    msg.enable(TRIVIAL_MSG);
 }
 
 RenderingWidget::~RenderingWidget()
@@ -64,6 +67,78 @@ RenderingWidget::~RenderingWidget()
 
 void RenderingWidget::initializeGL()
 {
+    msg.log("initializeGL()", TRIVIAL_MSG);
+
+    initializeOpenGLFunctions();
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
+    //QString vertexShaderFileName{ "shader/TransformVertexShader.vertexshader" };
+    //QString fragmentShaderFileName{ "shader/ColorFragmentShader.fragmentshader" };
+
+    //QFile vertexShaderFile{ vertexShaderFileName };
+    //vertexShaderFile.open(QFile::ReadOnly | QFile::Text);
+    //QTextStream tsv{ &vertexShaderFile };
+    //QString vertexShaderSource{ tsv.readAll() };
+    //vertexShaderFile.close();
+
+    //QFile fragmentShaderFile{ fragmentShaderFileName };
+    //fragmentShaderFile.open(QFile::ReadOnly | QFile::Text);
+    //QTextStream tsf{ &fragmentShaderFile };
+    //QString fragmentShaderSource{ tsf.readAll() };
+    //fragmentShaderFile.close();
+
+    //QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
+    //m_program = new QOpenGLShaderProgram(this);
+    //m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    //m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+    //m_program->link();
+
+    //msg.log("Shader loaded.", TRIVIAL_MSG);
+
+    initializeOpenGLFunctions();
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
+#define PROGRAM_VERTEX_ATTRIBUTE 0
+#define PROGRAM_TEXCOORD_ATTRIBUTE 1
+
+    QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
+    const char *vsrc =
+        "attribute highp vec4 vertex;\n"
+        "attribute mediump vec4 texCoord;\n"
+        "varying mediump vec4 texc;\n"
+        "uniform mediump mat4 matrix;\n"
+        "void main(void)\n"
+        "{\n"
+        "    gl_Position = matrix * vertex;\n"
+        "    texc = texCoord;\n"
+        "}\n";
+    vshader->compileSourceCode(vsrc);
+
+    QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
+    const char *fsrc =
+        "uniform sampler2D texture;\n"
+        "varying mediump vec4 texc;\n"
+        "void main(void)\n"
+        "{\n"
+        "    gl_FragColor = texture2D(texture, texc.st);\n"
+        "}\n";
+    fshader->compileSourceCode(fsrc);
+
+    m_program = new QOpenGLShaderProgram;
+    m_program->addShader(vshader);
+    m_program->addShader(fshader);
+    m_program->bindAttributeLocation("vertex", PROGRAM_VERTEX_ATTRIBUTE);
+    m_program->bindAttributeLocation("texCoord", PROGRAM_TEXCOORD_ATTRIBUTE);
+    m_program->link();
+
+    m_program->bind();
+    m_program->setUniformValue("texture", 0);
+    /* TRAIL branch */
+    /* 
 	glClearColor(0.15, 0.15, 0.3, 0.0);
 	glShadeModel(GL_SMOOTH);
 
@@ -78,10 +153,14 @@ void RenderingWidget::initializeGL()
 	glClearDepth(1);
 
 	SetLight();
+    */
 }
 
 void RenderingWidget::resizeGL(int w, int h)
 {
+    msg.log(QString("resizeGL() with size w=%0, h=%1").arg(w).arg(h), TRIVIAL_MSG);
+    /* TRAIL branch */
+    /*
 	h = (h == 0) ? 1 : h;
 
 	ptr_arcball_->reSetBound(w, h);
@@ -94,10 +173,63 @@ void RenderingWidget::resizeGL(int w, int h)
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+    */
 }
 
 void RenderingWidget::paintGL()
 {
+    msg.log("printGL()", TRIVIAL_MSG);
+
+    static const int coords[6][4][3] = {
+        { { +1, -1, -1 },{ -1, -1, -1 },{ -1, +1, -1 },{ +1, +1, -1 } },
+        { { +1, +1, -1 },{ -1, +1, -1 },{ -1, +1, +1 },{ +1, +1, +1 } },
+        { { +1, -1, +1 },{ +1, -1, -1 },{ +1, +1, -1 },{ +1, +1, +1 } },
+        { { -1, -1, -1 },{ -1, -1, +1 },{ -1, +1, +1 },{ -1, +1, -1 } },
+        { { +1, -1, +1 },{ -1, -1, +1 },{ -1, -1, -1 },{ +1, -1, -1 } },
+        { { -1, -1, +1 },{ +1, -1, +1 },{ +1, +1, +1 },{ -1, +1, +1 } }
+    };
+    QVector<GLfloat> vertData;
+    for (int i = 0; i < 6; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            // vertex position
+            vertData.append(0.2 * coords[i][j][0]);
+            vertData.append(0.2 * coords[i][j][1]);
+            vertData.append(0.2 * coords[i][j][2]);
+            // texture coordinate
+            vertData.append(j == 0 || j == 3);
+            vertData.append(j == 0 || j == 1);
+        }
+    }
+    QOpenGLBuffer vbo;
+    vbo.create();
+    vbo.bind();
+    vbo.allocate(vertData.constData(), vertData.count() * sizeof(GLfloat));
+
+    QColor clearColor{ Qt::darkBlue };
+    glClearColor(clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF());
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    QMatrix4x4 m;
+    m.ortho(-0.5f, +0.5f, +0.5f, -0.5f, 4.0f, 15.0f);
+    m.translate(0.0f, 0.0f, -10.0f);
+    m.rotate(0 / 16.0f, 1.0f, 0.0f, 0.0f);
+    m.rotate(0 / 16.0f, 0.0f, 1.0f, 0.0f);
+    m.rotate(0 / 16.0f, 0.0f, 0.0f, 1.0f);
+
+    m_program->setUniformValue("matrix", m);
+    m_program->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
+    m_program->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
+    m_program->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
+    m_program->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
+    for (int i = 0; i < 6; ++i) {
+        QOpenGLTexture textures(QImage{ 64,64,QImage::Format::Format_RGB16 });
+        textures.bind();
+
+        glDrawArrays(GL_TRIANGLE_FAN, i * 4, 4);
+    }
+
+    /* TRAIL branch */
+    /*
 	glShadeModel(GL_SMOOTH);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -130,6 +262,7 @@ void RenderingWidget::paintGL()
 
 	Render();
 	glPopMatrix();
+    */
 }
 
 void RenderingWidget::timerEvent(QTimerEvent * e)
@@ -139,72 +272,72 @@ void RenderingWidget::timerEvent(QTimerEvent * e)
 
 void RenderingWidget::mousePressEvent(QMouseEvent *e)
 {
-	switch (e->button())
-	{
-	case Qt::LeftButton:
-		ptr_arcball_->MouseDown(e->pos());
-		break;
-	case Qt::MidButton:
-		current_position_ = e->pos();
-		break;
-	default:
-		break;
-	}
+	//switch (e->button())
+	//{
+	//case Qt::LeftButton:
+	//	ptr_arcball_->MouseDown(e->pos());
+	//	break;
+	//case Qt::MidButton:
+	//	current_position_ = e->pos();
+	//	break;
+	//default:
+	//	break;
+	//}
 
-	updateGL();
+	//updateGL();
 }
 void RenderingWidget::mouseMoveEvent(QMouseEvent *e)
 {
-	switch (e->buttons())
-	{
-	case Qt::LeftButton:
-		ptr_arcball_->MouseMove(e->pos());
-		setCursor(Qt::ClosedHandCursor);
-		break;
-	case Qt::MidButton:
-		eye_goal_[0] -= 4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width());
-		eye_goal_[1] += 4.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height());
-		current_position_ = e->pos();
-		break;
-	default:
-		break;
-	}
+	//switch (e->buttons())
+	//{
+	//case Qt::LeftButton:
+	//	ptr_arcball_->MouseMove(e->pos());
+	//	setCursor(Qt::ClosedHandCursor);
+	//	break;
+	//case Qt::MidButton:
+	//	eye_goal_[0] -= 4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width());
+	//	eye_goal_[1] += 4.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height());
+	//	current_position_ = e->pos();
+	//	break;
+	//default:
+	//	break;
+	//}
 
-	updateGL();
+	//updateGL();
 }
 void RenderingWidget::mouseDoubleClickEvent(QMouseEvent *e)
 {
-	switch (e->button())
-	{
-	case Qt::LeftButton:
-		break;
-	default:
-		break;
-	}
-	updateGL();
+	//switch (e->button())
+	//{
+	//case Qt::LeftButton:
+	//	break;
+	//default:
+	//	break;
+	//}
+	//updateGL();
 }
 void RenderingWidget::mouseReleaseEvent(QMouseEvent *e)
 {
-	switch (e->button())
-	{
-	case Qt::LeftButton:
-		ptr_arcball_->MouseUp(e->pos());
-		setCursor(Qt::ArrowCursor);
-		break;
+	//switch (e->button())
+	//{
+	//case Qt::LeftButton:
+	//	ptr_arcball_->MouseUp(e->pos());
+	//	setCursor(Qt::ArrowCursor);
+	//	break;
 
-	case Qt::RightButton:
-		break;
-	default:
-		break;
-	}
+	//case Qt::RightButton:
+	//	break;
+	//default:
+	//	break;
+	//}
 }
 
 void RenderingWidget::wheelEvent(QWheelEvent *e)
 {
-	eye_distance_ += e->delta()*0.001;
-	eye_distance_ = eye_distance_ < 0 ? 0 : eye_distance_;
+	//eye_distance_ += e->delta()*0.001;
+	//eye_distance_ = eye_distance_ < 0 ? 0 : eye_distance_;
 
-	updateGL();
+	//updateGL();
 }
 
 void RenderingWidget::keyPressEvent(QKeyEvent *e)
@@ -227,23 +360,26 @@ void RenderingWidget::keyPressEvent(QKeyEvent *e)
 
 void RenderingWidget::keyReleaseEvent(QKeyEvent *e)
 {
-	switch (e->key())
-	{
-	case Qt::Key_A:
-		break;
-	default:
-		break;
-	}
+	//switch (e->key())
+	//{
+	//case Qt::Key_A:
+	//	break;
+	//default:
+	//	break;
+	//}
 }
 
 void RenderingWidget::Render()
 {
+    /* TRAIL branch */
+    /*
 	DrawPoints(is_draw_point_);
 	DrawEdge(is_draw_edge_);
 	DrawFace(is_draw_face_);
 	DrawTexture(is_draw_texture_);
 
     DrawAxes(is_draw_axes_);
+    */
 }
 
 void RenderingWidget::SetLight()

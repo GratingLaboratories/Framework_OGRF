@@ -10,8 +10,12 @@ MeshCompression::MeshCompression(QWidget *parent)
     //renderingwidget_->grabKeyboard();
     setCentralWidget(new QWidget);
 
-    //setGeometry(300, 150, 800, 600);
-    resize(1080, 960);
+
+    // Default windows SIZE, minimize.
+    renderingwidget_->setMinimumHeight(800);
+    renderingwidget_->setMinimumWidth(800);
+    setGeometry(100, 100, 0, 0);
+    resize(0, 0);
 
     CreateActions();
     CreateMenus();
@@ -19,6 +23,7 @@ MeshCompression::MeshCompression(QWidget *parent)
     CreateStatusBar();
     CreateRenderGroup();
 
+    // Vertical Box Layout
     QVBoxLayout *layout_left = new QVBoxLayout;
     layout_left->addWidget(groupbox_render_);
     layout_left->addStretch(1);
@@ -27,10 +32,12 @@ MeshCompression::MeshCompression(QWidget *parent)
     layout_left->addWidget(groupbox_control_);
     layout_left->addStretch(2);
 
+    // Horizontal Box Layout
     QHBoxLayout *layout_main = new QHBoxLayout;
 
     layout_main->addLayout(layout_left);
     layout_main->addWidget(renderingwidget_);
+    layout_main->setStretch(0, 0);
     layout_main->setStretch(1, 1);
 
     centralWidget()->setLayout(layout_main);

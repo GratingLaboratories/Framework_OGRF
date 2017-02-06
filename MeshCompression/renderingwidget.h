@@ -5,6 +5,7 @@
 
 #include "HE_mesh/Vec.h"
 #include "CompressionSolution.h"
+#include "ConsoleMessageManager.h"
 
 using trimesh::vec;
 using trimesh::point;
@@ -15,7 +16,7 @@ class MainWindow;
 class CArcBall;
 class Mesh3D;
 
-class RenderingWidget : public QOpenGLWidget
+class RenderingWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
 	Q_OBJECT
 
@@ -106,6 +107,9 @@ private:
     DifferenceMap               difference_map_;
     float                       max_difference_;
     bool                        compress_ok_;
+    ConsoleMessageManager       msg;
+
+    QOpenGLShaderProgram       *m_program;
 };
 
 #endif // RENDERINGWIDGET_H
