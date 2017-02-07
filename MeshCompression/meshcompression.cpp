@@ -37,8 +37,8 @@ MeshCompression::MeshCompression(QWidget *parent)
 
     layout_main->addLayout(layout_left);
     layout_main->addWidget(renderingwidget_);
-    layout_main->setStretch(0, 0);
-    layout_main->setStretch(1, 1);
+    layout_main->setStretch(0, 1);
+    layout_main->setStretch(1, 5);
 
     centralWidget()->setLayout(layout_main);
 

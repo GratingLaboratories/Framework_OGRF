@@ -63,97 +63,72 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 RenderingWidget::~RenderingWidget()
 {
 	SafeDelete(ptr_arcball_);
+    makeCurrent();
+    vbo->destroy();
+    doneCurrent();
 }
 
 void RenderingWidget::initializeGL()
 {
     msg.log("initializeGL()", TRIVIAL_MSG);
-
     initializeOpenGLFunctions();
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    QString vertexShaderFileName{ "shader/TrailVertexShader.vertexshader" };
+    QString fragmentShaderFileName{ "shader/TrailFragmentShader.fragmentshader" };
 
-    //QString vertexShaderFileName{ "shader/TransformVertexShader.vertexshader" };
-    //QString fragmentShaderFileName{ "shader/ColorFragmentShader.fragmentshader" };
+    // Read shader source code from files.
+    QFile vertexShaderFile{ vertexShaderFileName };
+    vertexShaderFile.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsv{ &vertexShaderFile };
+    QString vertexShaderSource{ tsv.readAll() };
+    vertexShaderFile.close();
 
-    //QFile vertexShaderFile{ vertexShaderFileName };
-    //vertexShaderFile.open(QFile::ReadOnly | QFile::Text);
-    //QTextStream tsv{ &vertexShaderFile };
-    //QString vertexShaderSource{ tsv.readAll() };
-    //vertexShaderFile.close();
+    QFile fragmentShaderFile{ fragmentShaderFileName };
+    fragmentShaderFile.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsf{ &fragmentShaderFile };
+    QString fragmentShaderSource{ tsf.readAll() };
+    fragmentShaderFile.close();
 
-    //QFile fragmentShaderFile{ fragmentShaderFileName };
-    //fragmentShaderFile.open(QFile::ReadOnly | QFile::Text);
-    //QTextStream tsf{ &fragmentShaderFile };
-    //QString fragmentShaderSource{ tsf.readAll() };
-    //fragmentShaderFile.close();
-
-    //QOpenGLFunctions *f = QOpenGLContext::currentContext()->functions();
-    //m_program = new QOpenGLShaderProgram(this);
-    //m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    //m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    //m_program->link();
-
-    //msg.log("Shader loaded.", TRIVIAL_MSG);
-
-    initializeOpenGLFunctions();
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-
-#define PROGRAM_VERTEX_ATTRIBUTE 0
-#define PROGRAM_TEXCOORD_ATTRIBUTE 1
-
-    QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
-    const char *vsrc =
-        "attribute highp vec4 vertex;\n"
-        "attribute mediump vec4 texCoord;\n"
-        "varying mediump vec4 texc;\n"
-        "uniform mediump mat4 matrix;\n"
-        "void main(void)\n"
-        "{\n"
-        "    gl_Position = matrix * vertex;\n"
-        "    texc = texCoord;\n"
-        "}\n";
-    vshader->compileSourceCode(vsrc);
-
-    QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
-    const char *fsrc =
-        "uniform sampler2D texture;\n"
-        "varying mediump vec4 texc;\n"
-        "void main(void)\n"
-        "{\n"
-        "    gl_FragColor = texture2D(texture, texc.st);\n"
-        "}\n";
-    fshader->compileSourceCode(fsrc);
-
-    m_program = new QOpenGLShaderProgram;
-    m_program->addShader(vshader);
-    m_program->addShader(fshader);
-    m_program->bindAttributeLocation("vertex", PROGRAM_VERTEX_ATTRIBUTE);
-    m_program->bindAttributeLocation("texCoord", PROGRAM_TEXCOORD_ATTRIBUTE);
+    m_program = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
+    m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
     m_program->link();
 
-    m_program->bind();
-    m_program->setUniformValue("texture", 0);
-    /* TRAIL branch */
-    /* 
-	glClearColor(0.15, 0.15, 0.3, 0.0);
-	glShadeModel(GL_SMOOTH);
+    // triangle.
+    GLfloat vertices[] = {
+        0.5f,  0.5f, 0.0f,  // Top Right
+        0.5f, -0.5f, 0.0f,  // Bottom Right
+        -0.5f, -0.5f, 0.0f,  // Bottom Left
+        -0.5f,  0.5f, 0.0f   // Top Left 
+    };
+    GLuint indices[] = {  // Note that we start from 0!
+        0, 1, 3,   // First Triangle
+        1, 2, 3    // Second Triangle
+    };
 
-	glEnable(GL_DOUBLEBUFFER);
-	glEnable(GL_POINT_SMOOTH);
-	glEnable(GL_LINE_SMOOTH);
-	glEnable(GL_POLYGON_SMOOTH);
-	glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	glEnable(GL_DEPTH_TEST);
-	glClearDepth(1);
+    vao = new QOpenGLVertexArrayObject();
+    vao->create();
+    vao->bind();
 
-	SetLight();
-    */
+    // vertex buffer.
+    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vbo->create();
+    vbo->bind();
+    vbo->allocate(vertices, sizeof vertices * sizeof(GLfloat));
+
+    // element buffer.
+    veo = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+    veo->create();
+    veo->bind();
+    veo->allocate(indices, sizeof indices * sizeof(GLuint));
+
+    m_program->enableAttributeArray(0);
+    m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
+
+    vao->release();
+
+    //m_program->enableAttributeArray(1);
+    //m_program->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
 }
 
 void RenderingWidget::resizeGL(int w, int h)
@@ -180,89 +155,20 @@ void RenderingWidget::paintGL()
 {
     msg.log("printGL()", TRIVIAL_MSG);
 
-    static const int coords[6][4][3] = {
-        { { +1, -1, -1 },{ -1, -1, -1 },{ -1, +1, -1 },{ +1, +1, -1 } },
-        { { +1, +1, -1 },{ -1, +1, -1 },{ -1, +1, +1 },{ +1, +1, +1 } },
-        { { +1, -1, +1 },{ +1, -1, -1 },{ +1, +1, -1 },{ +1, +1, +1 } },
-        { { -1, -1, -1 },{ -1, -1, +1 },{ -1, +1, +1 },{ -1, +1, -1 } },
-        { { +1, -1, +1 },{ -1, -1, +1 },{ -1, -1, -1 },{ +1, -1, -1 } },
-        { { -1, -1, +1 },{ +1, -1, +1 },{ +1, +1, +1 },{ -1, +1, +1 } }
-    };
-    QVector<GLfloat> vertData;
-    for (int i = 0; i < 6; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            // vertex position
-            vertData.append(0.2 * coords[i][j][0]);
-            vertData.append(0.2 * coords[i][j][1]);
-            vertData.append(0.2 * coords[i][j][2]);
-            // texture coordinate
-            vertData.append(j == 0 || j == 3);
-            vertData.append(j == 0 || j == 1);
-        }
-    }
-    QOpenGLBuffer vbo;
-    vbo.create();
-    vbo.bind();
-    vbo.allocate(vertData.constData(), vertData.count() * sizeof(GLfloat));
-
-    QColor clearColor{ Qt::darkBlue };
-    glClearColor(clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF());
+    glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    QMatrix4x4 m;
-    m.ortho(-0.5f, +0.5f, +0.5f, -0.5f, 4.0f, 15.0f);
-    m.translate(0.0f, 0.0f, -10.0f);
-    m.rotate(0 / 16.0f, 1.0f, 0.0f, 0.0f);
-    m.rotate(0 / 16.0f, 0.0f, 1.0f, 0.0f);
-    m.rotate(0 / 16.0f, 0.0f, 0.0f, 1.0f);
+    // Wire-frame mode.
+    // Any subsequent drawing calls will render the triangles in 
+    // wire-frame mode until we set it back to its default using 
+    // `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    m_program->setUniformValue("matrix", m);
-    m_program->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-    m_program->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
-    m_program->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
-    m_program->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
-    for (int i = 0; i < 6; ++i) {
-        QOpenGLTexture textures(QImage{ 64,64,QImage::Format::Format_RGB16 });
-        textures.bind();
+    m_program->bind();
 
-        glDrawArrays(GL_TRIANGLE_FAN, i * 4, 4);
-    }
-
-    /* TRAIL branch */
-    /*
-	glShadeModel(GL_SMOOTH);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	if (has_lighting_)
-	{
-		SetLight();
-	}
-	else
-	{
-		glDisable(GL_LIGHTING);
-		glDisable(GL_LIGHT0);
-	}
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	register vec eyepos = eye_distance_*eye_direction_;
-	gluLookAt(eyepos[0], eyepos[1], eyepos[2],
-		eye_goal_[0], eye_goal_[1], eye_goal_[2],
-		0.0, 1.0, 0.0);
-	glPushMatrix();
-
-	glMultMatrixf(ptr_arcball_->GetBallMatrix());
-
-    glClearColor(background_color_.red() / 256.0f,
-        background_color_.green() / 256.0f,
-        background_color_.blue() / 256.0f,
-        0.0);
-
-	Render();
-	glPopMatrix();
-    */
+    vao->bind();
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    vao->release();
 }
 
 void RenderingWidget::timerEvent(QTimerEvent * e)

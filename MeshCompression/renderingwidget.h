@@ -6,6 +6,7 @@
 #include "HE_mesh/Vec.h"
 #include "CompressionSolution.h"
 #include "ConsoleMessageManager.h"
+#include <memory>
 
 using trimesh::vec;
 using trimesh::point;
@@ -109,7 +110,10 @@ private:
     bool                        compress_ok_;
     ConsoleMessageManager       msg;
 
-    QOpenGLShaderProgram       *m_program;
+    std::shared_ptr<QOpenGLShaderProgram> m_program;
+    QOpenGLBuffer              *vbo;
+    QOpenGLBuffer              *veo;
+    QOpenGLVertexArrayObject   *vao;
 };
 
 #endif // RENDERINGWIDGET_H
