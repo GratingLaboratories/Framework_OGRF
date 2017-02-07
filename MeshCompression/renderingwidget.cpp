@@ -75,6 +75,7 @@ void RenderingWidget::initializeGL()
 
     QString vertexShaderFileName{ "shader/TrailVertexShader.vertexshader" };
     QString fragmentShaderFileName{ "shader/TrailFragmentShader.fragmentshader" };
+    QString fragmentShaderFileName_{ "shader/TrailFragmentShader_.fragmentshader" };
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
@@ -89,21 +90,32 @@ void RenderingWidget::initializeGL()
     QString fragmentShaderSource{ tsf.readAll() };
     fragmentShaderFile.close();
 
+    QFile fragmentShaderFile_{ fragmentShaderFileName_ };
+    fragmentShaderFile_.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsf_{ &fragmentShaderFile_ };
+    QString fragmentShaderSource_{ tsf_.readAll() };
+    fragmentShaderFile_.close();
+
     m_program = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
     m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
     m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
     m_program->link();
 
+    m_program_ = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
+    m_program_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    m_program_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_);
+    m_program_->link();
+
     // triangle.
-    GLfloat vertices[] = {
-        0.5f,  0.5f, 0.0f,  // Top Right
-        0.5f, -0.5f, 0.0f,  // Bottom Right
-        -0.5f, -0.5f, 0.0f,  // Bottom Left
-        -0.5f,  0.5f, 0.0f   // Top Left 
+    GLfloat firstTriangle[] = {
+        -0.9f, -0.5f, 0.0f,  // Left 
+        -0.0f, -0.5f, 0.0f,  // Right
+        -0.45f, 0.5f, 0.0f,  // Top 
     };
-    GLuint indices[] = {  // Note that we start from 0!
-        0, 1, 3,   // First Triangle
-        1, 2, 3    // Second Triangle
+    GLfloat secondTriangle[] = {
+        0.0f, -0.5f, 0.0f,  // Left
+        0.9f, -0.5f, 0.0f,  // Right
+        0.45f, 0.5f, 0.0f   // Top 
     };
 
     vao = new QOpenGLVertexArrayObject();
@@ -114,18 +126,28 @@ void RenderingWidget::initializeGL()
     vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
     vbo->create();
     vbo->bind();
-    vbo->allocate(vertices, sizeof vertices * sizeof(GLfloat));
-
-    // element buffer.
-    veo = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
-    veo->create();
-    veo->bind();
-    veo->allocate(indices, sizeof indices * sizeof(GLuint));
+    vbo->allocate(firstTriangle, sizeof firstTriangle * sizeof(GLfloat));
 
     m_program->enableAttributeArray(0);
     m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
 
     vao->release();
+
+    vao_ = new QOpenGLVertexArrayObject();
+    vao_->create();
+    vao_->bind();
+
+    // element buffer.
+    vbo_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    vbo_->create();
+    vbo_->bind();
+    vbo_->allocate(secondTriangle, sizeof secondTriangle * sizeof(GLuint));
+
+    m_program_->enableAttributeArray(0);
+    m_program_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
+
+    vao_->release();
+
 
     //m_program->enableAttributeArray(1);
     //m_program->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
@@ -164,11 +186,15 @@ void RenderingWidget::paintGL()
     // `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    m_program->bind();
-
+    m_program_->bind();
     vao->bind();
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
     vao->release();
+
+    m_program->bind();
+    vao_->bind();
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    vao_->release();
 }
 
 void RenderingWidget::timerEvent(QTimerEvent * e)

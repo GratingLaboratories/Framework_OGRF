@@ -111,9 +111,11 @@ private:
     ConsoleMessageManager       msg;
 
     std::shared_ptr<QOpenGLShaderProgram> m_program;
+    std::shared_ptr<QOpenGLShaderProgram> m_program_;
     QOpenGLBuffer              *vbo;
-    QOpenGLBuffer              *veo;
+    QOpenGLBuffer              *vbo_;
     QOpenGLVertexArrayObject   *vao;
+    QOpenGLVertexArrayObject   *vao_;
 };
 
 #endif // RENDERINGWIDGET_H
