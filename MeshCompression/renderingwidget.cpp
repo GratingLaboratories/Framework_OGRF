@@ -42,7 +42,9 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     precision_(100),
     max_difference_(0),
     compress_ok_(false),
-    msg(std::cout)
+    msg(std::cout),
+    frame_rate_limit(60),
+    fps(0)
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
@@ -57,7 +59,16 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 	eye_direction_[0] = eye_direction_[1] = 0.0;
 	eye_direction_[2] = 1.0;
 
-    msg.enable(TRIVIAL_MSG);
+    //msg.enable(TRIVIAL_MSG);
+
+    init_time.start();
+
+    last_time = QTime::currentTime();
+    timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(timerEvent()));
+
+    timer->setSingleShot(true);
+    timer->start();
 }
 
 RenderingWidget::~RenderingWidget()
@@ -75,7 +86,7 @@ void RenderingWidget::initializeGL()
 
     QString vertexShaderFileName{ "shader/TrailVertexShader.vertexshader" };
     QString fragmentShaderFileName{ "shader/TrailFragmentShader.fragmentshader" };
-    QString fragmentShaderFileName_{ "shader/TrailFragmentShader_.fragmentshader" };
+    ////QString fragmentShaderFileName_{ "shader/TrailFragmentShader_.fragmentshader" };
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
@@ -90,63 +101,106 @@ void RenderingWidget::initializeGL()
     QString fragmentShaderSource{ tsf.readAll() };
     fragmentShaderFile.close();
 
-    QFile fragmentShaderFile_{ fragmentShaderFileName_ };
-    fragmentShaderFile_.open(QFile::ReadOnly | QFile::Text);
-    QTextStream tsf_{ &fragmentShaderFile_ };
-    QString fragmentShaderSource_{ tsf_.readAll() };
-    fragmentShaderFile_.close();
+    ////QFile fragmentShaderFile_{ fragmentShaderFileName_ };
+    ////fragmentShaderFile_.open(QFile::ReadOnly | QFile::Text);
+    ////QTextStream tsf_{ &fragmentShaderFile_ };
+    ////QString fragmentShaderSource_{ tsf_.readAll() };
+    ////fragmentShaderFile_.close();
 
     m_program = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
     m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
     m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
     m_program->link();
-
-    m_program_ = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
-    m_program_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    m_program_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_);
-    m_program_->link();
+    
+    ////m_program_ = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
+    ////m_program_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    ////m_program_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_);
+    ////m_program_->link();
 
     // triangle.
-    GLfloat firstTriangle[] = {
-        -0.9f, -0.5f, 0.0f,  // Left 
-        -0.0f, -0.5f, 0.0f,  // Right
-        -0.45f, 0.5f, 0.0f,  // Top 
-    };
-    GLfloat secondTriangle[] = {
-        0.0f, -0.5f, 0.0f,  // Left
-        0.9f, -0.5f, 0.0f,  // Right
-        0.45f, 0.5f, 0.0f   // Top 
+    GLfloat twoTriangles[] = {
+           /* position */         /* color */           /* normal */
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.5f, 1.0f,    0.0f,  0.0f, -1.0f,
+         0.5f, -0.5f, -0.5f,    0.0f, 0.5f, 1.0f,    0.0f,  0.0f, -1.0f, 
+         0.5f,  0.5f, -0.5f,    0.0f, 0.5f, 1.0f,    0.0f,  0.0f, -1.0f, 
+         0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    0.0f,  0.0f, -1.0f, 
+        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    0.0f,  0.0f, -1.0f, 
+        -0.5f, -0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    0.0f,  0.0f, -1.0f, 
+
+        -0.5f, -0.5f,  0.5f,    0.2f, 0.5f, 0.8f,    0.0f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,    0.2f, 0.5f, 0.8f,    0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,    0.2f, 0.5f, 0.8f,    0.0f,  0.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,    0.2f, 1.0f, 0.8f,    0.0f,  0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,    0.2f, 1.0f, 0.8f,    0.0f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,    0.2f, 1.0f, 0.8f,    0.0f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f,  0.5f,    0.4f, 0.5f, 0.6f,   -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,    0.4f, 0.5f, 0.6f,   -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,    0.4f, 0.5f, 0.6f,   -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,    0.4f, 1.0f, 0.6f,   -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,    0.4f, 1.0f, 0.6f,   -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,    0.4f, 1.0f, 0.6f,   -1.0f,  0.0f,  0.0f,
+
+         0.5f,  0.5f,  0.5f,    0.6f, 0.5f, 0.4f,    1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,    0.6f, 0.5f, 0.4f,    1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,    0.6f, 0.5f, 0.4f,    1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,    0.6f, 1.0f, 0.4f,    1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,    0.6f, 1.0f, 0.4f,    1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,    0.6f, 1.0f, 0.4f,    1.0f,  0.0f,  0.0f,
+
+        -0.5f, -0.5f, -0.5f,    0.8f, 0.5f, 0.2f,    0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,    0.8f, 0.5f, 0.2f,    0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,    0.8f, 0.5f, 0.2f,    0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,    0.8f, 1.0f, 0.2f,    0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,    0.8f, 1.0f, 0.2f,    0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,    0.8f, 1.0f, 0.2f,    0.0f, -1.0f,  0.0f,
+
+        -0.5f,  0.5f, -0.5f,    1.0f, 0.5f, 0.0f,    0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,    1.0f, 0.5f, 0.0f,    0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,    1.0f, 0.5f, 0.0f,    0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,    1.0f, 1.0f, 0.0f,    0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,    1.0f, 1.0f, 0.0f,    0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,    1.0f, 1.0f, 0.0f,    0.0f,  1.0f,  0.0f,
     };
 
     vao = new QOpenGLVertexArrayObject();
     vao->create();
+
     vao->bind();
+    {
+        // vertex buffer.
+        vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+        vbo->create();
+        vbo->bind();
+        vbo->allocate(twoTriangles, sizeof twoTriangles * sizeof(GLfloat));
 
-    // vertex buffer.
-    vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vbo->create();
-    vbo->bind();
-    vbo->allocate(firstTriangle, sizeof firstTriangle * sizeof(GLfloat));
+        m_program->enableAttributeArray(0);
+        m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 9 * sizeof(GLfloat));
+        m_program->enableAttributeArray(1);
+        m_program->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+        m_program->enableAttributeArray(2);
+        m_program->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
 
-    m_program->enableAttributeArray(0);
-    m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
-
+    }
     vao->release();
 
-    vao_ = new QOpenGLVertexArrayObject();
-    vao_->create();
-    vao_->bind();
+    camera_ = OpenGLCamera({ 0.0f, 0.0f, 3.0f }, { 0.0f, 0.0f, 0.0f });
 
-    // element buffer.
-    vbo_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    vbo_->create();
-    vbo_->bind();
-    vbo_->allocate(secondTriangle, sizeof secondTriangle * sizeof(GLuint));
+    ////vao_ = new QOpenGLVertexArrayObject();
+    ////vao_->create();
+    ////vao_->bind();
 
-    m_program_->enableAttributeArray(0);
-    m_program_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
+    ////// element buffer.
+    ////vbo_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+    ////vbo_->create();
+    ////vbo_->bind();
+    ////vbo_->allocate(secondTriangle, sizeof secondTriangle * sizeof(GLuint));
 
-    vao_->release();
+    ////m_program_->enableAttributeArray(0);
+    ////m_program_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
+
+
+    ////vao_->release();
 
 
     //m_program->enableAttributeArray(1);
@@ -156,50 +210,128 @@ void RenderingWidget::initializeGL()
 void RenderingWidget::resizeGL(int w, int h)
 {
     msg.log(QString("resizeGL() with size w=%0, h=%1").arg(w).arg(h), TRIVIAL_MSG);
-    /* TRAIL branch */
-    /*
-	h = (h == 0) ? 1 : h;
-
-	ptr_arcball_->reSetBound(w, h);
-
-	glViewport(0, 0, w, h);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	gluPerspective(45.0, GLdouble(w) / GLdouble(h), 0.001, 1000);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-    */
 }
 
 void RenderingWidget::paintGL()
 {
-    msg.log("printGL()", TRIVIAL_MSG);
+    msg.log(QString("printGL()"), TRIVIAL_MSG);
 
-    glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+    // OpenGL work.
+    glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Wire-frame mode.
-    // Any subsequent drawing calls will render the triangles in 
-    // wire-frame mode until we set it back to its default using 
-    // `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
 
-    m_program_->bind();
-    vao->bind();
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    vao->release();
+    ////// Wire-frame mode.
+    ////// Any subsequent drawing calls will render the triangles in 
+    ////// wire-frame mode until we set it back to its default using 
+    ////// `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
+    ////glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    ////m_program_->bind();
+
+    ////auto time = QTime::currentTime().msecsSinceStartOfDay();
+    ////float r = abs(sinf(time * 1.0 / 1000));
+    ////float g = abs(sinf((time + 333) * 1.0 / 1000));
+    ////float b = abs(sinf((time - 333) * 1.0 / 1000));
+    ////m_program_->setUniformValue("myColor", r, g, b, 1.0f);
+
+    GLfloat cubePositions[10][3] = {
+        { 0.0f,  0.0f,  0.0f },
+        { 2.0f,  5.0f, -15.0f },
+        { -1.5f, -2.2f, -2.5f },
+        { -3.8f, -2.0f, -12.3f },
+        { 2.4f, -0.4f, -3.5f },
+        { -1.7f,  3.0f, -7.5f },
+        { 1.3f, -2.0f, -2.5f },
+        { 1.5f,  2.0f, -2.5f },
+        { 1.5f,  0.2f, -1.5f },
+        { -1.3f,  1.0f, -1.5f },
+    };
 
     m_program->bind();
-    vao_->bind();
-    glDrawArrays(GL_TRIANGLES, 0, 3);
-    vao_->release();
+    {
+        vao->bind();
+        {
+            QMatrix4x4 mat_model; 
+
+            QMatrix4x4 mat_view;
+            mat_view.translate(0.0f, 0.0f, -3.0f);
+            
+            QMatrix4x4 mat_projection;
+            mat_projection.perspective(45.0f,
+                float(this->width()) / float(this->height()),
+                0.1f, 100.f);
+
+            m_program->setUniformValue("view", camera_.view_mat());
+            m_program->setUniformValue("projection", mat_projection);
+            m_program->setUniformValue("lightPos", 1.2f, 1.0f, 2.0f);
+            m_program->setUniformValue("viewPos", camera_.position());
+
+            for (GLuint i = 0; i < 10; i++)
+            {
+                mat_model = QMatrix4x4();
+                
+                mat_model.translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2]);
+
+                mat_model.rotate(static_cast<GLfloat>(init_time.elapsed()) / 20, 0.0f, 1.0f, 0.0f);
+
+                GLfloat angle = 20.0f * i;
+                mat_model.rotate(angle, 1.0f, 0.3f, 0.5f);
+
+                m_program->setUniformValue("model", mat_model);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
+        }
+        vao->release();
+    }
+    m_program->release();
+
+    // Restore Polygon Mode to ensure the correctness of native painter
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
+    // Native Painter work.
+    QPainter painter(this);
+    // Show FPS.
+    painter.setPen(Qt::white);
+    painter.setFont(QFont{ "PT Mono", 12 });
+    painter.drawText(this->width() / 15, this->height() / 15, 
+        QString("FPS: %0").arg(fps));
+    painter.end();
 }
 
-void RenderingWidget::timerEvent(QTimerEvent * e)
+float update_fps(float this_fps)
 {
+    static const int fps_stat_cnt = 20;
+    static float fps_vec[fps_stat_cnt] = { 0 };
+    static float old_fps = 0.0f;
+    static int count = 0;
+    for (int i = 0; i < fps_stat_cnt - 1; i++)
+        fps_vec[i] = fps_vec[i + 1];
+    fps_vec[fps_stat_cnt - 1] = this_fps;
+    float sum = 0;
+    for (int i = 0; i < fps_stat_cnt; i++)
+        sum += fps_vec[i];
+    if (++count == fps_stat_cnt)
+    {
+        old_fps = sum / fps_stat_cnt;
+        count = 0;
+    }
+    return old_fps;
+}
+
+void RenderingWidget::timerEvent()
+{
+    auto delta_time = last_time.msecsTo(QTime::currentTime());
+    fps = update_fps(1000.0 / delta_time);
+    msg.log(QString("\rdelta time = %0 ms")
+        .arg(last_time.msecsTo(QTime::currentTime()))
+        , TRIVIAL_MSG);
+    last_time = QTime::currentTime();
 	updateGL();
+
+    timer->start(1000 / frame_rate_limit);
 }
 
 void RenderingWidget::mousePressEvent(QMouseEvent *e)
@@ -268,14 +400,18 @@ void RenderingWidget::wheelEvent(QWheelEvent *e)
 {
 	//eye_distance_ += e->delta()*0.001;
 	//eye_distance_ = eye_distance_ < 0 ? 0 : eye_distance_;
+    camera_.move_back(- e->delta()*0.003);
 
-	//updateGL();
+	updateGL();
 }
 
 void RenderingWidget::keyPressEvent(QKeyEvent *e)
 {
-	switch (e->key())
-	{
+    float angle = 10.0f;
+    if (e->modifiers() & Qt::ShiftModifier)
+        angle = 2.5f;
+    switch (e->key())
+    {
     case Qt::Key_Enter:
         // Fail to catch Enter use these code.
         emit(operatorInfo(QString("pressed Enter")));
@@ -283,11 +419,46 @@ void RenderingWidget::keyPressEvent(QKeyEvent *e)
     case Qt::Key_Space:
         emit(operatorInfo(QString("pressed Space")));
         break;
-	default:
+
+    case Qt::Key_Left:
+        emit(operatorInfo(QString("camera move_around_left  %0 degrees").arg(angle)));
+        camera_.move_around_right(-angle);
+        break;
+    case Qt::Key_Right:
+        emit(operatorInfo(QString("camera move_around_right %0 degrees").arg(angle)));
+        camera_.move_around_right(+angle);
+        break;
+    case Qt::Key_Up:
+        emit(operatorInfo(QString("camera move_around_up    %0 degrees").arg(angle)));
+        camera_.move_around_up(+angle);
+        break;
+    case Qt::Key_Down:
+        emit(operatorInfo(QString("camera move_around_down  %0 degrees").arg(angle)));
+        camera_.move_around_up(-angle);
+        break;
+
+    case Qt::Key_W:
+        emit(operatorInfo(QString("target move_around_up    %0 degrees").arg(angle)));
+        camera_.move_around_up_target(+angle);
+        break;
+    case Qt::Key_A:
+        emit(operatorInfo(QString("target move_around_left  %0 degrees").arg(angle)));
+        camera_.move_around_right_target(-angle);
+        break;
+    case Qt::Key_S:
+        emit(operatorInfo(QString("target move_around_down  %0 degrees").arg(angle)));
+        camera_.move_around_up_target(-angle);
+        break;
+    case Qt::Key_D:
+        emit(operatorInfo(QString("target move_around_right %0 degrees").arg(angle)));
+        camera_.move_around_right_target(+angle);
+        break;
+
+    default:
         emit(operatorInfo(QString("pressed ") + e->text() +
             QString("(%0)").arg(e->key())));
-		break;
-	}
+        break;
+    }
 }
 
 void RenderingWidget::keyReleaseEvent(QKeyEvent *e)

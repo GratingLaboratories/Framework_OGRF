@@ -6,6 +6,7 @@
 #include "HE_mesh/Vec.h"
 #include "CompressionSolution.h"
 #include "ConsoleMessageManager.h"
+#include "OpenGLCamera.h"
 #include <memory>
 
 using trimesh::vec;
@@ -29,7 +30,6 @@ protected:
 	void initializeGL();
 	void resizeGL(int w, int h);
 	void paintGL();
-	void timerEvent(QTimerEvent *e);
 
 	// mouse events
 	void mousePressEvent(QMouseEvent *e);
@@ -75,6 +75,9 @@ private:
 	void DrawFace(bool);
 	void DrawTexture(bool);
 
+private slots:
+    void timerEvent();
+
 public:
 	MainWindow					*ptr_mainwindow_;
 	CArcBall					*ptr_arcball_;
@@ -110,12 +113,18 @@ private:
     bool                        compress_ok_;
     ConsoleMessageManager       msg;
 
+    int                         frame_rate_limit;
+    float                       fps;
+    QTime                       last_time;
+    QTime                       init_time;
+    QTimer                     *timer;
     std::shared_ptr<QOpenGLShaderProgram> m_program;
-    std::shared_ptr<QOpenGLShaderProgram> m_program_;
+    //std::shared_ptr<QOpenGLShaderProgram> m_program_todo; // TODO
     QOpenGLBuffer              *vbo;
-    QOpenGLBuffer              *vbo_;
+    //QOpenGLBuffer              *vbo_;
     QOpenGLVertexArrayObject   *vao;
-    QOpenGLVertexArrayObject   *vao_;
+    //QOpenGLVertexArrayObject   *vao_;
+    OpenGLCamera                camera_;
 };
 
 #endif // RENDERINGWIDGET_H
