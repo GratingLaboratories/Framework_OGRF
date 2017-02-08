@@ -43,7 +43,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     max_difference_(0),
     compress_ok_(false),
     msg(std::cout),
-    frame_rate_limit(60),
+    frame_rate_limit(40),
     fps(0)
 {
     // Set the focus policy to Strong, 
@@ -74,6 +74,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 RenderingWidget::~RenderingWidget()
 {
 	SafeDelete(ptr_arcball_);
+    SafeDelete(timer);
     makeCurrent();
     vbo->destroy();
     doneCurrent();
@@ -170,6 +171,7 @@ void RenderingWidget::initializeGL()
     {
         // vertex buffer.
         vbo = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+        vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
         vbo->create();
         vbo->bind();
         vbo->allocate(twoTriangles, sizeof twoTriangles * sizeof(GLfloat));
@@ -180,7 +182,6 @@ void RenderingWidget::initializeGL()
         m_program->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
         m_program->enableAttributeArray(2);
         m_program->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
-
     }
     vao->release();
 
@@ -249,6 +250,44 @@ void RenderingWidget::paintGL()
         { -1.3f,  1.0f, -1.5f },
     };
 
+    GLfloat *buffer;
+    int i_buf = 0;
+    if (!mesh_.vertices_empty())
+    {
+        buffer = new float[mesh_.n_faces() * 3 * 9];
+        for (auto f : mesh_.faces())
+        {
+            auto he = mesh_.halfedge_handle(f);
+            do
+            {
+                auto v = mesh_.to_vertex_handle(he);
+
+                buffer[i_buf++] = mesh_.point(v)[0];
+                buffer[i_buf++] = mesh_.point(v)[1];
+                buffer[i_buf++] = mesh_.point(v)[2];
+
+                buffer[i_buf++] = 0.6f;
+                buffer[i_buf++] = 0.6f;
+                buffer[i_buf++] = 1.0f;
+
+                buffer[i_buf++] = mesh_.normal(v)[0];
+                buffer[i_buf++] = mesh_.normal(v)[1];
+                buffer[i_buf++] = mesh_.normal(v)[2];
+                ////glNormal3fv(mesh_.normal(v).data());
+                ////glColor3f(1.0f, 1.0f, 1.0f);
+                ////glVertex3fv(mesh_.point(v).data());
+
+                he = mesh_.next_halfedge_handle(he);
+            } while (he != mesh_.halfedge_handle(f));
+        }
+
+        vao->bind();
+            vbo->bind();
+                vbo->allocate(buffer, mesh_.n_faces() * 3 * 9 * sizeof(GLfloat));
+            vbo->release();
+        vao->release();
+    }
+
     m_program->bind();
     {
         vao->bind();
@@ -265,7 +304,7 @@ void RenderingWidget::paintGL()
 
             m_program->setUniformValue("view", camera_.view_mat());
             m_program->setUniformValue("projection", mat_projection);
-            m_program->setUniformValue("lightPos", 1.2f, 1.0f, 2.0f);
+            m_program->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
             m_program->setUniformValue("viewPos", camera_.position());
 
             for (GLuint i = 0; i < 10; i++)
@@ -274,14 +313,14 @@ void RenderingWidget::paintGL()
                 
                 mat_model.translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2]);
 
-                mat_model.rotate(static_cast<GLfloat>(init_time.elapsed()) / 20, 0.0f, 1.0f, 0.0f);
+                mat_model.rotate(static_cast<GLfloat>(init_time.elapsed()) / 50, 0.0f, 1.0f, 0.0f);
 
                 GLfloat angle = 20.0f * i;
                 mat_model.rotate(angle, 1.0f, 0.3f, 0.5f);
 
                 m_program->setUniformValue("model", mat_model);
 
-                glDrawArrays(GL_TRIANGLES, 0, 36);
+                glDrawArrays(GL_TRIANGLES, 0, mesh_.n_faces() * 3);
             }
         }
         vao->release();
