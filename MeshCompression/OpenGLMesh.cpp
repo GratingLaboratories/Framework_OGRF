@@ -55,15 +55,11 @@ void OpenGLMesh::update()
     for (auto v_it : mesh_.vertices())
     {
         _push_vec(vbuffer, mesh_.point(v_it));
-        if (i % 3 == 0)
-            _push_vec(vbuffer, { 1.0f, 0.6f, 0.6f });
-        else if (i % 3 == 1)
-            _push_vec(vbuffer, { 0.6f, 1.0f, 0.6f });
-        else if (i % 3 == 2)
-            _push_vec(vbuffer, { 0.6f, 0.6f, 1.0f });
-        else
-            _push_vec(vbuffer, { 1.0f, 1.0f, 1.0f });
-
+        _push_vec(vbuffer, { 
+            sinf((i + 0) * 3.14f /  30) * 0.2f + 0.8f, 
+            sinf((i + 0) * 3.14f /  60) * 0.2f + 0.8f,
+            sinf((i + 0) * 3.14f / 120) * 0.2f + 0.8f
+        });
         _push_vec(vbuffer, mesh_.normal(v_it));
         i++;
     }

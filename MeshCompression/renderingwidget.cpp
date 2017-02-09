@@ -293,8 +293,10 @@ void RenderingWidget::mousePressEvent(QMouseEvent *e)
 	switch (e->button())
 	{
 	case Qt::LeftButton:
-		ptr_arcball_->MouseDown(e->pos());
-		break;
+		//ptr_arcball_->MouseDown(e->pos());
+        current_position_ = e->pos();
+        setCursor(Qt::ClosedHandCursor);
+        break;
 	case Qt::MidButton:
 		current_position_ = e->pos();
 		break;
@@ -306,21 +308,27 @@ void RenderingWidget::mousePressEvent(QMouseEvent *e)
 }
 void RenderingWidget::mouseMoveEvent(QMouseEvent *e)
 {
+    bool has_shift = e->modifiers() & Qt::ShiftModifier;
+    bool has_ctrl = e->modifiers() & Qt::ControlModifier;
+    float multiplier = 1.0;
+    multiplier *= has_shift ? 0.25f : 1.0f;
+    multiplier *= has_ctrl ?  3.0f : 1.0f;
 	switch (e->buttons())
 	{
 	case Qt::LeftButton:
-		ptr_arcball_->MouseMove(e->pos());
-		setCursor(Qt::ClosedHandCursor);
+		//ptr_arcball_->MouseMove(e->pos());
+        camera_.move_around_right(-180.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()) * multiplier);
+        camera_.move_around_up(+180.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height()) * multiplier);
+        current_position_ = e->pos();
 		break;
 	case Qt::MidButton:
-		camera_.move_right_target(-4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()));
-        camera_.move_up_target(+4.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height()));
+		camera_.move_right_target(-4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()) * multiplier);
+        camera_.move_up_target(+4.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height()) * multiplier);
 		current_position_ = e->pos();
 		break;
 	default:
 		break;
 	}
-
 	updateGL();
 }
 void RenderingWidget::mouseDoubleClickEvent(QMouseEvent *e)
@@ -339,7 +347,7 @@ void RenderingWidget::mouseReleaseEvent(QMouseEvent *e)
 	switch (e->button())
 	{
 	case Qt::LeftButton:
-		ptr_arcball_->MouseUp(e->pos());
+	    //ptr_arcball_->MouseUp(e->pos());
 		setCursor(Qt::ArrowCursor);
 		break;
 
@@ -352,18 +360,26 @@ void RenderingWidget::mouseReleaseEvent(QMouseEvent *e)
 
 void RenderingWidget::wheelEvent(QWheelEvent *e)
 {
-	//eye_distance_ += e->delta()*0.001;
-	//eye_distance_ = eye_distance_ < 0 ? 0 : eye_distance_;
-    camera_.move_back(- e->delta()*0.003);
+    bool has_shift = e->modifiers() & Qt::ShiftModifier;
+    bool has_ctrl = e->modifiers() & Qt::ControlModifier;
+    float multiplier = 1.0;
+    multiplier *= has_shift ? 0.25f : 1.0f;
+    multiplier *= has_ctrl ? 3.0f : 1.0f;
+    camera_.move_back(- e->delta()*0.0015 * multiplier);
 
 	updateGL();
 }
 
 void RenderingWidget::keyPressEvent(QKeyEvent *e)
 {
-    float angle = 10.0f;
-    if (e->modifiers() & Qt::ShiftModifier)
-        angle = 2.5f;
+    bool has_shift = e->modifiers() & Qt::ShiftModifier;
+    bool has_ctrl = e->modifiers() & Qt::ControlModifier;
+    float multiplier = 1.0;
+    multiplier *= has_shift ? 0.25f : 1.0f;
+    multiplier *= has_ctrl ? 3.0f : 1.0f;
+
+    float angle = 10.0f * multiplier;
+
     switch (e->key())
     {
     case Qt::Key_Enter:
