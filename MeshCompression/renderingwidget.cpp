@@ -23,6 +23,8 @@
 
 #define INF                 9.9e9f
 
+#define DEFAULT_CAMERA_POSITION { 3.0f, 0.0f, 0.0f }
+
 typedef trimesh::vec3  Vec3f;
 using Vec3f_om = OpenMesh::Vec3f;
 
@@ -86,8 +88,8 @@ void RenderingWidget::initializeGL()
 
     initializeOpenGLFunctions();
 
-    QString vertexShaderFileName{ "shader/TrailVertexShader.vertexshader" };
-    QString fragmentShaderFileName{ "shader/TrailFragmentShader.fragmentshader" };
+    QString vertexShaderFileName{ "shader/BasicPhongVertexShader.vertexshader" };
+    QString fragmentShaderFileName{ "shader/BasicPhongFragmentShader.fragmentshader" };
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
@@ -133,7 +135,7 @@ void RenderingWidget::initializeGL()
     }
     vao->release();
 
-    camera_ = OpenGLCamera({ 0.0f, 0.0f, 3.0f }, { 0.0f, 0.0f, 0.0f });
+    camera_ = OpenGLCamera(DEFAULT_CAMERA_POSITION, { 0.0f, 0.0f, 0.0f });
 }
 
 void RenderingWidget::resizeGL(int w, int h)
@@ -188,9 +190,6 @@ void RenderingWidget::paintGL()
         vao->bind();
         {
             QMatrix4x4 mat_model; 
-
-            QMatrix4x4 mat_view;
-            mat_view.translate(0.0f, 0.0f, -3.0f);
             
             QMatrix4x4 mat_projection;
             mat_projection.perspective(45.0f,
@@ -210,8 +209,8 @@ void RenderingWidget::paintGL()
 
                 //mat_model.rotate(static_cast<GLfloat>(init_time.elapsed()) / 50, 0.0f, 1.0f, 0.0f);
 
-                GLfloat angle = 20.0f * i;
-                mat_model.rotate(angle, 1.0f, 0.3f, 0.5f);
+                //GLfloat angle = 20.0f * i;
+                //mat_model.rotate(angle, 1.0f, 0.3f, 0.5f);
 
                 shader_program_basic_phong_->setUniformValue("model", mat_model);
 
@@ -220,6 +219,25 @@ void RenderingWidget::paintGL()
         }
         vao->release();
     }
+
+    // TODO
+    glLineWidth(2.5);
+    glColor3f(1.0, 0.0, 0.0);
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(1.0, 0.0, 0.0);
+    glEnd();
+    glColor3f(0.0, 1.0, 0.0);
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(0.0, 1.0, 0.0);
+    glEnd();
+    glColor3f(0.0, 1.0, 0.0);
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(0.0, 0.0, 1.0);
+    glEnd();
+
     shader_program_basic_phong_->release();
 
     // Restore Polygon Mode to ensure the correctness of native painter
@@ -387,6 +405,10 @@ void RenderingWidget::keyPressEvent(QKeyEvent *e)
         emit(operatorInfo(QString("target move_around_right %0 degrees").arg(angle)));
         camera_.move_around_right_target(+angle);
         break;
+    case Qt::Key_R:
+        emit(operatorInfo(QString("reset camera")));
+        camera_ = OpenGLCamera(DEFAULT_CAMERA_POSITION, {0, 0, 0});
+        break;
 
     default:
         emit(operatorInfo(QString("pressed ") + e->text() +
@@ -421,21 +443,21 @@ void RenderingWidget::Render()
 
 void RenderingWidget::SetLight()
 {
-	static GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	static GLfloat mat_shininess[] = { 50.0f };
-	static GLfloat light_position[] = { 1.0f, 1.0f, 1.0f, 0.0f };
-	static GLfloat white_light[] = { 0.8f, 0.8f, 0.9f, 1.0f };
-	static GLfloat lmodel_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+	//static GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//static GLfloat mat_shininess[] = { 50.0f };
+	//static GLfloat light_position[] = { 1.0f, 1.0f, 1.0f, 0.0f };
+	//static GLfloat white_light[] = { 0.8f, 0.8f, 0.9f, 1.0f };
+	//static GLfloat lmodel_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
 
-	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
-	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
+	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	//glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	//glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	//glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
+	//glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
+	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
 
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
+	//glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHT0);
 }
 
 void RenderingWidget::SetBackground()
@@ -450,7 +472,6 @@ void RenderingWidget::SetBackground()
 
 	updateGL();
 }
-
 
 void mesh_unify(TriMesh &mesh, float scale = 1.0)
 {

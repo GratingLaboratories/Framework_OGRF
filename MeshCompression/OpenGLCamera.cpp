@@ -10,7 +10,7 @@ OpenGLCamera::~OpenGLCamera()
 void OpenGLCamera::update()
 {
     direction_ = (position_ - target_).normalized();
-    QVector3D up{ 0.0f, 1.0f, 0.0f };
+    QVector3D up{ 0.0f, 0.0f, 1.0f };
     right_ = QVector3D::crossProduct(up, direction_);
     up_ = QVector3D::crossProduct(direction_, right_);
 }
@@ -29,6 +29,9 @@ void OpenGLCamera::move_up(float dis)
 
 void OpenGLCamera::move_back(float dis)
 {
+    float radius = (position_ - target_).length();
+    if (radius < -dis)
+        return;
     position_ += dis * direction_;
     update();
 }

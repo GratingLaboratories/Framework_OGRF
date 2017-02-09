@@ -51,11 +51,21 @@ Vec3f trans_coord(Vec3f &p)
 void OpenGLMesh::update()
 {
     vbuffer.clear();
+    int i = 0;
     for (auto v_it : mesh_.vertices())
     {
-        _push_vec(vbuffer, trans_coord(mesh_.point(v_it)));
-        _push_vec(vbuffer, { 1.0f, 1.0f, 1.0f });
+        _push_vec(vbuffer, mesh_.point(v_it));
+        if (i % 3 == 0)
+            _push_vec(vbuffer, { 1.0f, 0.6f, 0.6f });
+        else if (i % 3 == 1)
+            _push_vec(vbuffer, { 0.6f, 1.0f, 0.6f });
+        else if (i % 3 == 2)
+            _push_vec(vbuffer, { 0.6f, 0.6f, 1.0f });
+        else
+            _push_vec(vbuffer, { 1.0f, 1.0f, 1.0f });
+
         _push_vec(vbuffer, mesh_.normal(v_it));
+        i++;
     }
     assert(vbuffer.size() == mesh_.n_vertices() * TOTAL_ATTRIBUTE_SIZE);
 
