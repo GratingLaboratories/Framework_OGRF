@@ -46,7 +46,8 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     compress_ok_(false),
     msg(std::cout),
     frame_rate_limit(60),
-    fps(0)
+    fps(0),
+    light_dir_fix_(false)
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
@@ -149,6 +150,7 @@ void RenderingWidget::paintGL()
 
     // OpenGL work.
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
@@ -200,7 +202,10 @@ void RenderingWidget::paintGL()
 
             shader_program_basic_phong_->setUniformValue("view", camera_.view_mat() * arcball_mat);
             shader_program_basic_phong_->setUniformValue("projection", mat_projection);
-            shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
+            if (light_dir_fix_)
+                shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
+            else
+                shader_program_basic_phong_->setUniformValue("lightDirFrom", camera_.direction());
             shader_program_basic_phong_->setUniformValue("viewPos", camera_.position());
 
             for (GLuint i = 0; i < 1; i++)
@@ -425,7 +430,11 @@ void RenderingWidget::keyPressEvent(QKeyEvent *e)
         break;
     case Qt::Key_R:
         emit(operatorInfo(QString("reset camera")));
-        camera_ = OpenGLCamera(DEFAULT_CAMERA_POSITION, {0, 0, 0});
+        camera_ = OpenGLCamera(DEFAULT_CAMERA_POSITION, { 0, 0, 0 });
+        break;
+    case Qt::Key_L:
+        emit(operatorInfo(QString("light fix switch")));
+        light_dir_fix_ = !light_dir_fix_;
         break;
 
     default:

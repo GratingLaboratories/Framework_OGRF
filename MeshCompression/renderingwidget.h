@@ -124,6 +124,7 @@ private:
     QOpenGLVertexArrayObject   *vao;
     OpenGLCamera                camera_;
     OpenGLMesh                  test;
+    bool                        light_dir_fix_;
 };
 
 #endif // RENDERINGWIDGET_H
