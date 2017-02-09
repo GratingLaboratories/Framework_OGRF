@@ -9,6 +9,7 @@
 #include "OpenGLCamera.h"
 #include <memory>
 #include "OpenGLMesh.h"
+#include "OpenGLScene.h"
 
 using trimesh::vec;
 using trimesh::point;
@@ -124,6 +125,7 @@ private:
     QOpenGLVertexArrayObject   *vao;
     OpenGLCamera                camera_;
     OpenGLMesh                  test;
+    OpenGLScene                 scene;
     bool                        light_dir_fix_;
 };
 

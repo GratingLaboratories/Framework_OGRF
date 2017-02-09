@@ -47,11 +47,14 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     msg(std::cout),
     frame_rate_limit(60),
     fps(0),
-    light_dir_fix_(false)
+    light_dir_fix_(false),
+    scene(msg)
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
     setFocusPolicy(Qt::StrongFocus);
+
+    scene.open("scene/test/test.scene");
 
 	ptr_arcball_ = new CArcBall(width(), height());
 
