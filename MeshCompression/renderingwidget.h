@@ -8,6 +8,7 @@
 #include "ConsoleMessageManager.h"
 #include "OpenGLCamera.h"
 #include <memory>
+#include "OpenGLMesh.h"
 
 using trimesh::vec;
 using trimesh::point;
@@ -125,6 +126,7 @@ private:
     QOpenGLVertexArrayObject   *vao;
     //QOpenGLVertexArrayObject   *vao_;
     OpenGLCamera                camera_;
+    OpenGLMesh                  test;
 };
 
 #endif // RENDERINGWIDGET_H

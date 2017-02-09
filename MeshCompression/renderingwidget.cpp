@@ -83,6 +83,7 @@ RenderingWidget::~RenderingWidget()
 void RenderingWidget::initializeGL()
 {
     msg.log("initializeGL()", TRIVIAL_MSG);
+
     initializeOpenGLFunctions();
 
     QString vertexShaderFileName{ "shader/TrailVertexShader.vertexshader" };
@@ -252,6 +253,7 @@ void RenderingWidget::paintGL()
 
     GLfloat *buffer;
     int i_buf = 0;
+
     if (!mesh_.vertices_empty())
     {
         buffer = new float[mesh_.n_faces() * 3 * 9];
@@ -625,41 +627,6 @@ void RenderingWidget::ReadMesh()
 	QTextCodec *code = QTextCodec::codecForName("gd18030");
     QTextCodec::setCodecForLocale(code);
     QByteArray byfilename = filename.toLocal8Bit();
-
-    //Read Mesh
-    mesh_.request_vertex_normals();
-    OpenMesh::IO::Options opt;
-    if (!OpenMesh::IO::read_mesh(mesh_, byfilename.data(), opt))
-    {
-        std::cerr << "Cannot Open mesh file." << std::endl;
-        exit(0xA1);
-    }
-
-    // If the file did not provide vertex normals, then calculate them
-    if (!opt.check(OpenMesh::IO::Options::VertexNormal))
-    {
-        // we need face normals to update the vertex normals
-        mesh_.request_face_normals();
-        // let the mesh update the normals
-        mesh_.update_normals();
-        // dispose the face normals, as we don't need them anymore
-        mesh_.release_face_normals();
-    }
-
-    //Get Point,Face and edge numbers
-    std::cout << "PointSize:" << mesh_.n_vertices() << std::endl;
-    std::cout << "FaceSize:" << mesh_.n_faces() << std::endl;
-    std::cout << "EdgeSize:" << mesh_.n_edges() << std::endl;
-
-    mesh_unify(mesh_, 2.0f);
-    mesh_.update_normals();
-
-	//	m_pMesh->LoadFromOBJFile(filename.toLatin1().data());
-	emit(operatorInfo(QString("Read Mesh from") + filename + QString(" Done")));
-	emit(meshInfo(mesh_.n_vertices(), mesh_.n_edges(), mesh_.n_faces()));
-    
-    // mark compress state after mesh changed.
-    compress_ok_ = false;
 
 	updateGL();
 }
