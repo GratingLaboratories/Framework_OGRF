@@ -6,7 +6,7 @@
 #include <iostream>
 #include <QTextCodec>
 #include <SOIL/SOIL.h>
-#include "ArcBall.hpp"
+#include "ArcBall.h"
 #include "globalFunctions.h"
 #include "HE_mesh/Vec.h"
 #include "CompressionSolution.h"
@@ -27,7 +27,6 @@
 
 typedef trimesh::vec3  Vec3f;
 using Vec3f_om = OpenMesh::Vec3f;
-using CPM_ARC_BALL_NS::ArcBall;
 
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     QOpenGLWidget(parent),
@@ -53,7 +52,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     // then the renderingWidget can accept keyboard input event and response.
     setFocusPolicy(Qt::StrongFocus);
 
-    ptr_arcball_ = new ArcBall({0, 0, 0}, 0.75f);
+	ptr_arcball_ = new CArcBall(width(), height());
 
 	is_load_texture_ = false;
 	is_draw_axes_ = false;
@@ -197,9 +196,9 @@ void RenderingWidget::paintGL()
                 float(this->width()) / float(this->height()),
                 0.1f, 100.f);
 
-            QMatrix4x4 arcball_mat(&ptr_arcball_->getTransformation()[0][0]);
+            QMatrix4x4 arcball_mat{ ptr_arcball_->GetBallMatrix() };
 
-            shader_program_basic_phong_->setUniformValue("view", arcball_mat * camera_.view_mat());
+            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat() * arcball_mat);
             shader_program_basic_phong_->setUniformValue("projection", mat_projection);
             shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
             shader_program_basic_phong_->setUniformValue("viewPos", camera_.position());
@@ -294,7 +293,7 @@ void RenderingWidget::mousePressEvent(QMouseEvent *e)
 	switch (e->button())
 	{
 	case Qt::LeftButton:
-        ptr_arcball_->beginDrag({ e->pos().x(), e->pos().y() });
+		ptr_arcball_->MouseDown(e->pos());
 		break;
 	case Qt::MidButton:
 		current_position_ = e->pos();
@@ -310,7 +309,7 @@ void RenderingWidget::mouseMoveEvent(QMouseEvent *e)
 	switch (e->buttons())
 	{
 	case Qt::LeftButton:
-		ptr_arcball_->drag({ e->pos().x(), e->pos().y() });
+		ptr_arcball_->MouseMove(e->pos());
 		setCursor(Qt::ClosedHandCursor);
 		break;
 	case Qt::MidButton:
@@ -340,7 +339,7 @@ void RenderingWidget::mouseReleaseEvent(QMouseEvent *e)
 	switch (e->button())
 	{
 	case Qt::LeftButton:
-		//ptr_arcball_->MouseUp(e->pos());
+		ptr_arcball_->MouseUp(e->pos());
 		setCursor(Qt::ArrowCursor);
 		break;
 

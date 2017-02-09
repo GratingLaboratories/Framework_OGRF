@@ -9,7 +9,6 @@
 #include "OpenGLCamera.h"
 #include <memory>
 #include "OpenGLMesh.h"
-#include "ArcBall.hpp"
 
 using trimesh::vec;
 using trimesh::point;
@@ -82,7 +81,7 @@ private slots:
 
 public:
 	MainWindow					*ptr_mainwindow_;
-    CPM_ARC_BALL_NS::ArcBall    *ptr_arcball_;
+	CArcBall					*ptr_arcball_;
     TriMesh                      mesh_;
 
 	// Texture

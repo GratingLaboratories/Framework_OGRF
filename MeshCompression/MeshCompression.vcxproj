@@ -110,7 +110,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ArcBall.hpp" />
+    <ClInclude Include="ArcBall.h" />
     <ClInclude Include="CompressionSolution.h" />
     <ClInclude Include="ConsoleMessageManager.h" />
     <ClInclude Include="GeneratedFiles\ui_meshcompression.h" />
