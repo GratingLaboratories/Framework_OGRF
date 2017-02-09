@@ -196,7 +196,9 @@ void RenderingWidget::paintGL()
                 float(this->width()) / float(this->height()),
                 0.1f, 100.f);
 
-            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat());
+            QMatrix4x4 arcball_mat{ ptr_arcball_->GetBallMatrix() };
+
+            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat() * arcball_mat);
             shader_program_basic_phong_->setUniformValue("projection", mat_projection);
             shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
             shader_program_basic_phong_->setUniformValue("viewPos", camera_.position());
