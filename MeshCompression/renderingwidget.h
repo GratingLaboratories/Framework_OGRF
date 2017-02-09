@@ -119,12 +119,9 @@ private:
     QTime                       last_time;
     QTime                       init_time;
     QTimer                     *timer;
-    std::shared_ptr<QOpenGLShaderProgram> m_program;
-    //std::shared_ptr<QOpenGLShaderProgram> m_program_todo; // TODO
-    QOpenGLBuffer              *vbo;
-    //QOpenGLBuffer              *vbo_;
+    QOpenGLShaderProgram       *shader_program_basic_phong_;
+    QOpenGLBuffer              *vbo, *veo;
     QOpenGLVertexArrayObject   *vao;
-    //QOpenGLVertexArrayObject   *vao_;
     OpenGLCamera                camera_;
     OpenGLMesh                  test;
 };

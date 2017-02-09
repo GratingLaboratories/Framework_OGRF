@@ -43,7 +43,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     max_difference_(0),
     compress_ok_(false),
     msg(std::cout),
-    frame_rate_limit(40),
+    frame_rate_limit(60),
     fps(0)
 {
     // Set the focus policy to Strong, 
@@ -88,7 +88,6 @@ void RenderingWidget::initializeGL()
 
     QString vertexShaderFileName{ "shader/TrailVertexShader.vertexshader" };
     QString fragmentShaderFileName{ "shader/TrailFragmentShader.fragmentshader" };
-    ////QString fragmentShaderFileName_{ "shader/TrailFragmentShader_.fragmentshader" };
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
@@ -103,67 +102,10 @@ void RenderingWidget::initializeGL()
     QString fragmentShaderSource{ tsf.readAll() };
     fragmentShaderFile.close();
 
-    ////QFile fragmentShaderFile_{ fragmentShaderFileName_ };
-    ////fragmentShaderFile_.open(QFile::ReadOnly | QFile::Text);
-    ////QTextStream tsf_{ &fragmentShaderFile_ };
-    ////QString fragmentShaderSource_{ tsf_.readAll() };
-    ////fragmentShaderFile_.close();
-
-    m_program = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
-    m_program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    m_program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    m_program->link();
-    
-    ////m_program_ = std::make_shared<QOpenGLShaderProgram>(new QOpenGLShaderProgram(this));
-    ////m_program_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    ////m_program_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_);
-    ////m_program_->link();
-
-    // triangle.
-    GLfloat twoTriangles[] = {
-           /* position */         /* color */           /* normal */
-        -0.5f, -0.5f, -0.5f,    0.0f, 0.5f, 1.0f,    0.0f,  0.0f, -1.0f,
-         0.5f, -0.5f, -0.5f,    0.0f, 0.5f, 1.0f,    0.0f,  0.0f, -1.0f, 
-         0.5f,  0.5f, -0.5f,    0.0f, 0.5f, 1.0f,    0.0f,  0.0f, -1.0f, 
-         0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    0.0f,  0.0f, -1.0f, 
-        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    0.0f,  0.0f, -1.0f, 
-        -0.5f, -0.5f, -0.5f,    0.0f, 1.0f, 1.0f,    0.0f,  0.0f, -1.0f, 
-
-        -0.5f, -0.5f,  0.5f,    0.2f, 0.5f, 0.8f,    0.0f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,    0.2f, 0.5f, 0.8f,    0.0f,  0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,    0.2f, 0.5f, 0.8f,    0.0f,  0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,    0.2f, 1.0f, 0.8f,    0.0f,  0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,    0.2f, 1.0f, 0.8f,    0.0f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,    0.2f, 1.0f, 0.8f,    0.0f,  0.0f, 1.0f,
-
-        -0.5f,  0.5f,  0.5f,    0.4f, 0.5f, 0.6f,   -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,    0.4f, 0.5f, 0.6f,   -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,    0.4f, 0.5f, 0.6f,   -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,    0.4f, 1.0f, 0.6f,   -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,    0.4f, 1.0f, 0.6f,   -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,    0.4f, 1.0f, 0.6f,   -1.0f,  0.0f,  0.0f,
-
-         0.5f,  0.5f,  0.5f,    0.6f, 0.5f, 0.4f,    1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,    0.6f, 0.5f, 0.4f,    1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,    0.6f, 0.5f, 0.4f,    1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,    0.6f, 1.0f, 0.4f,    1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,    0.6f, 1.0f, 0.4f,    1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,    0.6f, 1.0f, 0.4f,    1.0f,  0.0f,  0.0f,
-
-        -0.5f, -0.5f, -0.5f,    0.8f, 0.5f, 0.2f,    0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,    0.8f, 0.5f, 0.2f,    0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,    0.8f, 0.5f, 0.2f,    0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,    0.8f, 1.0f, 0.2f,    0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,    0.8f, 1.0f, 0.2f,    0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,    0.8f, 1.0f, 0.2f,    0.0f, -1.0f,  0.0f,
-
-        -0.5f,  0.5f, -0.5f,    1.0f, 0.5f, 0.0f,    0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,    1.0f, 0.5f, 0.0f,    0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,    1.0f, 0.5f, 0.0f,    0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,    1.0f, 1.0f, 0.0f,    0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,    1.0f, 1.0f, 0.0f,    0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,    1.0f, 1.0f, 0.0f,    0.0f,  1.0f,  0.0f,
-    };
+    shader_program_basic_phong_ = new QOpenGLShaderProgram(this);
+    shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+    shader_program_basic_phong_->link();
 
     vao = new QOpenGLVertexArrayObject();
     vao->create();
@@ -175,38 +117,23 @@ void RenderingWidget::initializeGL()
         vbo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
         vbo->create();
         vbo->bind();
-        vbo->allocate(twoTriangles, sizeof twoTriangles * sizeof(GLfloat));
 
-        m_program->enableAttributeArray(0);
-        m_program->setAttributeBuffer(0, GL_FLOAT, 0, 3, 9 * sizeof(GLfloat));
-        m_program->enableAttributeArray(1);
-        m_program->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
-        m_program->enableAttributeArray(2);
-        m_program->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+        // element index buffer
+        veo = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+        veo->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+        veo->create();
+        veo->bind();
+
+        shader_program_basic_phong_->enableAttributeArray(0);
+        shader_program_basic_phong_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 9 * sizeof(GLfloat));
+        shader_program_basic_phong_->enableAttributeArray(1);
+        shader_program_basic_phong_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+        shader_program_basic_phong_->enableAttributeArray(2);
+        shader_program_basic_phong_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
     }
     vao->release();
 
     camera_ = OpenGLCamera({ 0.0f, 0.0f, 3.0f }, { 0.0f, 0.0f, 0.0f });
-
-    ////vao_ = new QOpenGLVertexArrayObject();
-    ////vao_->create();
-    ////vao_->bind();
-
-    ////// element buffer.
-    ////vbo_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
-    ////vbo_->create();
-    ////vbo_->bind();
-    ////vbo_->allocate(secondTriangle, sizeof secondTriangle * sizeof(GLuint));
-
-    ////m_program_->enableAttributeArray(0);
-    ////m_program_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 3 * sizeof(GLfloat));
-
-
-    ////vao_->release();
-
-
-    //m_program->enableAttributeArray(1);
-    //m_program->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
 }
 
 void RenderingWidget::resizeGL(int w, int h)
@@ -230,14 +157,6 @@ void RenderingWidget::paintGL()
     ////// `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
     ////glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    ////m_program_->bind();
-
-    ////auto time = QTime::currentTime().msecsSinceStartOfDay();
-    ////float r = abs(sinf(time * 1.0 / 1000));
-    ////float g = abs(sinf((time + 333) * 1.0 / 1000));
-    ////float b = abs(sinf((time - 333) * 1.0 / 1000));
-    ////m_program_->setUniformValue("myColor", r, g, b, 1.0f);
-
     GLfloat cubePositions[10][3] = {
         { 0.0f,  0.0f,  0.0f },
         { 2.0f,  5.0f, -15.0f },
@@ -254,43 +173,17 @@ void RenderingWidget::paintGL()
     GLfloat *buffer;
     int i_buf = 0;
 
-    if (!mesh_.vertices_empty())
+    if (test.changed())
     {
-        buffer = new float[mesh_.n_faces() * 3 * 9];
-        for (auto f : mesh_.faces())
-        {
-            auto he = mesh_.halfedge_handle(f);
-            do
-            {
-                auto v = mesh_.to_vertex_handle(he);
-
-                buffer[i_buf++] = mesh_.point(v)[0];
-                buffer[i_buf++] = mesh_.point(v)[1];
-                buffer[i_buf++] = mesh_.point(v)[2];
-
-                buffer[i_buf++] = 0.6f;
-                buffer[i_buf++] = 0.6f;
-                buffer[i_buf++] = 1.0f;
-
-                buffer[i_buf++] = mesh_.normal(v)[0];
-                buffer[i_buf++] = mesh_.normal(v)[1];
-                buffer[i_buf++] = mesh_.normal(v)[2];
-                ////glNormal3fv(mesh_.normal(v).data());
-                ////glColor3f(1.0f, 1.0f, 1.0f);
-                ////glVertex3fv(mesh_.point(v).data());
-
-                he = mesh_.next_halfedge_handle(he);
-            } while (he != mesh_.halfedge_handle(f));
-        }
-
         vao->bind();
             vbo->bind();
-                vbo->allocate(buffer, mesh_.n_faces() * 3 * 9 * sizeof(GLfloat));
+                vbo->allocate(test.vbuffer.data(), test.vbuffer.size() * sizeof(GLfloat));
+                veo->allocate(test.ebuffer.data(), test.ebuffer.size() * sizeof(GLuint));
             vbo->release();
-        vao->release();
+        vao->release();        
     }
 
-    m_program->bind();
+    shader_program_basic_phong_->bind();
     {
         vao->bind();
         {
@@ -304,30 +197,30 @@ void RenderingWidget::paintGL()
                 float(this->width()) / float(this->height()),
                 0.1f, 100.f);
 
-            m_program->setUniformValue("view", camera_.view_mat());
-            m_program->setUniformValue("projection", mat_projection);
-            m_program->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
-            m_program->setUniformValue("viewPos", camera_.position());
+            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat());
+            shader_program_basic_phong_->setUniformValue("projection", mat_projection);
+            shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
+            shader_program_basic_phong_->setUniformValue("viewPos", camera_.position());
 
-            for (GLuint i = 0; i < 10; i++)
+            for (GLuint i = 0; i < 1; i++)
             {
                 mat_model = QMatrix4x4();
                 
-                mat_model.translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2]);
+                //mat_model.translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2]);
 
-                mat_model.rotate(static_cast<GLfloat>(init_time.elapsed()) / 50, 0.0f, 1.0f, 0.0f);
+                //mat_model.rotate(static_cast<GLfloat>(init_time.elapsed()) / 50, 0.0f, 1.0f, 0.0f);
 
                 GLfloat angle = 20.0f * i;
                 mat_model.rotate(angle, 1.0f, 0.3f, 0.5f);
 
-                m_program->setUniformValue("model", mat_model);
+                shader_program_basic_phong_->setUniformValue("model", mat_model);
 
-                glDrawArrays(GL_TRIANGLES, 0, mesh_.n_faces() * 3);
+                glDrawElements(GL_TRIANGLES, test.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
             }
         }
         vao->release();
     }
-    m_program->release();
+    shader_program_basic_phong_->release();
 
     // Restore Polygon Mode to ensure the correctness of native painter
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -377,38 +270,38 @@ void RenderingWidget::timerEvent()
 
 void RenderingWidget::mousePressEvent(QMouseEvent *e)
 {
-	//switch (e->button())
-	//{
-	//case Qt::LeftButton:
-	//	ptr_arcball_->MouseDown(e->pos());
-	//	break;
-	//case Qt::MidButton:
-	//	current_position_ = e->pos();
-	//	break;
-	//default:
-	//	break;
-	//}
+	switch (e->button())
+	{
+	case Qt::LeftButton:
+		ptr_arcball_->MouseDown(e->pos());
+		break;
+	case Qt::MidButton:
+		current_position_ = e->pos();
+		break;
+	default:
+		break;
+	}
 
-	//updateGL();
+	updateGL();
 }
 void RenderingWidget::mouseMoveEvent(QMouseEvent *e)
 {
-	//switch (e->buttons())
-	//{
-	//case Qt::LeftButton:
-	//	ptr_arcball_->MouseMove(e->pos());
-	//	setCursor(Qt::ClosedHandCursor);
-	//	break;
-	//case Qt::MidButton:
-	//	eye_goal_[0] -= 4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width());
-	//	eye_goal_[1] += 4.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height());
-	//	current_position_ = e->pos();
-	//	break;
-	//default:
-	//	break;
-	//}
+	switch (e->buttons())
+	{
+	case Qt::LeftButton:
+		ptr_arcball_->MouseMove(e->pos());
+		setCursor(Qt::ClosedHandCursor);
+		break;
+	case Qt::MidButton:
+		camera_.move_right_target(-4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()));
+        camera_.move_up_target(+4.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height()));
+		current_position_ = e->pos();
+		break;
+	default:
+		break;
+	}
 
-	//updateGL();
+	updateGL();
 }
 void RenderingWidget::mouseDoubleClickEvent(QMouseEvent *e)
 {
@@ -423,18 +316,18 @@ void RenderingWidget::mouseDoubleClickEvent(QMouseEvent *e)
 }
 void RenderingWidget::mouseReleaseEvent(QMouseEvent *e)
 {
-	//switch (e->button())
-	//{
-	//case Qt::LeftButton:
-	//	ptr_arcball_->MouseUp(e->pos());
-	//	setCursor(Qt::ArrowCursor);
-	//	break;
+	switch (e->button())
+	{
+	case Qt::LeftButton:
+		ptr_arcball_->MouseUp(e->pos());
+		setCursor(Qt::ArrowCursor);
+		break;
 
-	//case Qt::RightButton:
-	//	break;
-	//default:
-	//	break;
-	//}
+	case Qt::RightButton:
+		break;
+	default:
+		break;
+	}
 }
 
 void RenderingWidget::wheelEvent(QWheelEvent *e)
@@ -627,6 +520,8 @@ void RenderingWidget::ReadMesh()
 	QTextCodec *code = QTextCodec::codecForName("gd18030");
     QTextCodec::setCodecForLocale(code);
     QByteArray byfilename = filename.toLocal8Bit();
+
+    test = OpenGLMesh(filename);
 
 	updateGL();
 }
