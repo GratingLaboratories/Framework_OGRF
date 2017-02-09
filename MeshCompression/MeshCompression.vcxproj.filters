@@ -93,9 +93,6 @@
     <ClInclude Include="GeneratedFiles\ui_meshcompression.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArcBall.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HE_mesh\Vec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -115,6 +112,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OpenGLMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ArcBall.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
