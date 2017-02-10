@@ -387,6 +387,7 @@ void RenderingWidget::keyPressEvent(QKeyEvent *e)
     multiplier *= has_ctrl ? 3.0f : 1.0f;
 
     float angle = 10.0f * multiplier;
+    float dis = 0.2f * multiplier;
 
     switch (e->key())
     {
@@ -430,6 +431,16 @@ void RenderingWidget::keyPressEvent(QKeyEvent *e)
     case Qt::Key_D:
         emit(operatorInfo(QString("target move_around_right %0 degrees").arg(angle)));
         camera_.move_around_right_target(+angle);
+        break;
+    case Qt::Key_Equal:
+    case Qt::Key_Plus:
+        emit(operatorInfo(QString("move front")));
+        camera_.move_back(-dis);
+        break;
+    case Qt::Key_Minus:
+    case Qt::Key_Underscore:
+        emit(operatorInfo(QString("move back ")));
+        camera_.move_back(+dis);
         break;
     case Qt::Key_R:
         emit(operatorInfo(QString("reset camera")));
