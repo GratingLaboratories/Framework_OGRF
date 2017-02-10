@@ -54,7 +54,7 @@ void MeshCompression::CreateActions()
     action_open_ = new QAction(QIcon(":/MeshCompression/Resources/images/open.png"), tr("&Open..."), this);
     action_open_->setShortcuts(QKeySequence::Open);
     action_open_->setStatusTip(tr("Open an existing file"));
-    connect(action_open_, SIGNAL(triggered()), renderingwidget_, SLOT(ReadMesh()));
+    connect(action_open_, SIGNAL(triggered()), renderingwidget_, SLOT(ReadScene()));
 
     action_save_ = new QAction(QIcon(":/MeshCompression/Resources/images/save.png"), tr("&Save"), this);
     action_save_->setShortcuts(QKeySequence::Save);
@@ -66,14 +66,16 @@ void MeshCompression::CreateActions()
     action_saveas_->setStatusTip(tr("Save the document under a new name"));
     //  connect(action_saveas_, SIGNAL(triggered()), imagewidget_, SLOT(SaveAs()));
 
-    action_loadmesh_ = new QAction(tr("readOBJ"), this);
+    action_loadmesh_ = new QAction(tr("open_scene"), this);
+    action_loadmesh_->setIcon(QIcon(tr(":/MainWindow/open.png")));
     action_loadtexture_ = new QAction(tr("LoadTexture"), this);
-    action_background_ = new QAction(tr("ChangeBackground"), this);
+    //action_background_ = new QAction(tr("ChangeBackground"), this);
+    action_background_ = new QAction(tr(""), this);
 
     action_convert_ = new QAction(tr("Convert"), this);
     action_param_ = new QAction(tr("Param"), this);
 
-    connect(action_loadmesh_, SIGNAL(triggered()), renderingwidget_, SLOT(ReadMesh()));
+    connect(action_loadmesh_, SIGNAL(triggered()), renderingwidget_, SLOT(ReadScene()));
     connect(action_loadtexture_, SIGNAL(triggered()), renderingwidget_, SLOT(LoadTexture()));
     connect(action_background_, SIGNAL(triggered()), renderingwidget_, SLOT(SetBackground()));
     //connect(action_convert_, SIGNAL(triggered()), renderingwidget_, SLOT(Convert()));
@@ -82,12 +84,12 @@ void MeshCompression::CreateActions()
 
 void MeshCompression::CreateMenus()
 {
-    menu_file_ = menuBar()->addMenu(tr("&File"));
-    menu_file_->setStatusTip(tr("File menu"));
-    menu_file_->addAction(action_new_);
-    menu_file_->addAction(action_open_);
-    menu_file_->addAction(action_save_);
-    menu_file_->addAction(action_saveas_);
+    //menu_file_ = menuBar()->addMenu(tr("&File"));
+    //menu_file_->setStatusTip(tr("File menu"));
+    //menu_file_->addAction(action_new_);
+    //menu_file_->addAction(action_open_);
+    //menu_file_->addAction(action_save_);
+    //menu_file_->addAction(action_saveas_);
 }
 
 void MeshCompression::CreateToolBars()
@@ -115,7 +117,7 @@ void MeshCompression::CreateStatusBar()
     label_operatorinfo_->setAlignment(Qt::AlignVCenter);
 
 
-    statusBar()->addWidget(label_meshinfo_);
+    //statusBar()->addWidget(label_meshinfo_);
     connect(renderingwidget_, SIGNAL(meshInfo(int, int, int)), this, SLOT(ShowMeshInfo(int, int, int)));
 
     statusBar()->addWidget(label_operatorinfo_);

@@ -54,7 +54,7 @@ private:
 
 public slots:
 	void SetBackground();
-	void ReadMesh();
+	void ReadScene();
 	void WriteMesh();
 	void LoadTexture();
     void Compress();

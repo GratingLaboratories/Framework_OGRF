@@ -167,13 +167,14 @@ void OpenGLMesh::mesh_unify(float scale, bool centralize)
     float xmax = max_pos[0], ymax = max_pos[1], zmax = max_pos[2];
     float xmin = min_pos[0], ymin = min_pos[1], zmin = min_pos[2];
 
+    // here we use height(z) as scale target.
     float scaleX = xmax - xmin;
     float scaleY = ymax - ymin;
     float scaleZ = zmax - zmin;
-    float scaleMax;
+    float scaleMax = scaleZ;
 
-    scaleMax = std::max(scaleX, scaleY);
-    scaleMax = std::max(scaleMax, scaleZ);
+    //scaleMax = std::max(scaleX, scaleY);
+    //scaleMax = std::max(scaleMax, scaleZ);
 
     float scaleV = scale / scaleMax;
     Vec3f center((xmin + xmax) / 2.f, (ymin + ymax) / 2.f, (zmin + zmax) / 2.f);

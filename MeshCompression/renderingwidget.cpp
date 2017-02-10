@@ -5,12 +5,12 @@
 #include <QFileDialog>
 #include <iostream>
 #include <QTextCodec>
-#include <SOIL/SOIL.h>
+//#include <SOIL/SOIL.h>
 #include "ArcBall.h"
 #include "globalFunctions.h"
 #include "HE_mesh/Vec.h"
 #include "CompressionSolution.h"
-#include "PsudoColorRGB.h"
+//#include "PsudoColorRGB.h"
 
 #define updateGL update
 
@@ -23,7 +23,7 @@
 
 #define INF                 9.9e9f
 
-#define DEFAULT_CAMERA_POSITION { 3.0f, 0.0f, 0.0f }
+#define DEFAULT_CAMERA_POSITION { 3.0f, 3.0f, 1.5f }
 
 typedef trimesh::vec3  Vec3f;
 using Vec3f_om = OpenMesh::Vec3f;
@@ -54,7 +54,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     // then the renderingWidget can accept keyboard input event and response.
     setFocusPolicy(Qt::StrongFocus);
 
-    scene.open("scene/test/test.scene");
+    //scene.open("scene/test/test.scene");
 
 	ptr_arcball_ = new CArcBall(width(), height());
 
@@ -165,21 +165,21 @@ void RenderingWidget::paintGL()
     ////// `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
     ////glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    GLfloat cubePositions[10][3] = {
-        { 0.0f,  0.0f,  0.0f },
-        { 2.0f,  5.0f, -15.0f },
-        { -1.5f, -2.2f, -2.5f },
-        { -3.8f, -2.0f, -12.3f },
-        { 2.4f, -0.4f, -3.5f },
-        { -1.7f,  3.0f, -7.5f },
-        { 1.3f, -2.0f, -2.5f },
-        { 1.5f,  2.0f, -2.5f },
-        { 1.5f,  0.2f, -1.5f },
-        { -1.3f,  1.0f, -1.5f },
-    };
+    //GLfloat cubePositions[10][3] = {
+    //    { 0.0f,  0.0f,  0.0f },
+    //    { 2.0f,  5.0f, -15.0f },
+    //    { -1.5f, -2.2f, -2.5f },
+    //    { -3.8f, -2.0f, -12.3f },
+    //    { 2.4f, -0.4f, -3.5f },
+    //    { -1.7f,  3.0f, -7.5f },
+    //    { 1.3f, -2.0f, -2.5f },
+    //    { 1.5f,  2.0f, -2.5f },
+    //    { 1.5f,  0.2f, -1.5f },
+    //    { -1.3f,  1.0f, -1.5f },
+    //};
 
-    GLfloat *buffer;
-    int i_buf = 0;
+    //GLfloat *buffer;
+    //int i_buf = 0;
 
     if (scene.changed())
     {
@@ -319,6 +319,7 @@ void RenderingWidget::mouseMoveEvent(QMouseEvent *e)
 {
     bool has_shift = e->modifiers() & Qt::ShiftModifier;
     bool has_ctrl = e->modifiers() & Qt::ControlModifier;
+    bool has_alt = e->modifiers() & Qt::AltModifier;
     float multiplier = 1.0;
     multiplier *= has_shift ? 0.25f : 1.0f;
     multiplier *= has_ctrl ?  3.0f : 1.0f;
@@ -326,9 +327,17 @@ void RenderingWidget::mouseMoveEvent(QMouseEvent *e)
 	{
 	case Qt::LeftButton:
 		//ptr_arcball_->MouseMove(e->pos());
-        camera_.move_around_right(-180.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()) * multiplier);
-        camera_.move_around_up(+180.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height()) * multiplier);
-        current_position_ = e->pos();
+        if (has_alt)
+        {
+            camera_.move_right_target(-4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()) * multiplier);
+            camera_.move_up_target(+4.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height()) * multiplier);
+        }
+        else
+        {
+            camera_.move_around_right(-180.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()) * multiplier);
+            camera_.move_around_up(+180.0*GLfloat(e->y() - current_position_.y()) / GLfloat(height()) * multiplier);
+        }
+            current_position_ = e->pos();
 		break;
 	case Qt::MidButton:
 		camera_.move_right_target(-4.0*GLfloat(e->x() - current_position_.x()) / GLfloat(width()) * multiplier);
@@ -567,15 +576,15 @@ void mesh_unify(TriMesh &mesh, float scale = 1.0)
     // REMARK: OpenMesh::Vec3f has conflict with Vec3f;
 }
 
-void RenderingWidget::ReadMesh()
+void RenderingWidget::ReadScene()
 {
 	QString filename = QFileDialog::
-		getOpenFileName(this, tr("Read Mesh"),
-		"..", tr("Meshes (*.obj)"));
+		getOpenFileName(this, tr("Read Scene"),
+		"./scene", tr("Scene Files (*.scene)"));
 
 	if (filename.isEmpty())
 	{
-		emit(operatorInfo(QString("Read Mesh Failed!")));
+		emit(operatorInfo(QString("Read Scene Failed!")));
 		return;
 	}
 
@@ -584,136 +593,139 @@ void RenderingWidget::ReadMesh()
     QTextCodec::setCodecForLocale(code);
     QByteArray byfilename = filename.toLocal8Bit();
 
-    test = OpenGLMesh();
-    test.file_name_ = filename;
-    test.need_scale_ = true;
-    test.need_centralize_ = true;
-    test.scale_ = 1.0f;
-    test.init();
+    scene.open(filename);
+
+
+    //test = OpenGLMesh();
+    //test.file_name_ = filename;
+    //test.need_scale_ = true;
+    //test.need_centralize_ = true;
+    //test.scale_ = 1.0f;
+    //test.init();
 
 	updateGL();
 }
 
 void RenderingWidget::WriteMesh()
 {
-	if (mesh_.n_vertices() == 0)
-	{
-		emit(QString("The Mesh is Empty !"));
-		return;
-	}
-	QString filename = QFileDialog::
-		getSaveFileName(this, tr("Write Mesh"),
-		"..", tr("Meshes (*.obj)"));
+	//if (mesh_.n_vertices() == 0)
+	//{
+	//	emit(QString("The Mesh is Empty !"));
+	//	return;
+	//}
+	//QString filename = QFileDialog::
+	//	getSaveFileName(this, tr("Write Mesh"),
+	//	"..", tr("Meshes (*.obj)"));
 
-	if (filename.isEmpty())
-		return;
+	//if (filename.isEmpty())
+	//	return;
 
-    // 中文路径支持
-    QTextCodec *code = QTextCodec::codecForName("gd18030");
-    QTextCodec::setCodecForLocale(code);
-    QByteArray byfilename = filename.toLocal8Bit();
-    if (!OpenMesh::IO::write_mesh(mesh_, byfilename.data()))
-    {
-        std::cerr << "Cannot write mesh file." << std::endl;
-        exit(0xA1);
-    }
+ //   // 中文路径支持
+ //   QTextCodec *code = QTextCodec::codecForName("gd18030");
+ //   QTextCodec::setCodecForLocale(code);
+ //   QByteArray byfilename = filename.toLocal8Bit();
+ //   if (!OpenMesh::IO::write_mesh(mesh_, byfilename.data()))
+ //   {
+ //       std::cerr << "Cannot write mesh file." << std::endl;
+ //       exit(0xA1);
+ //   }
 
-	emit(operatorInfo(QString("Write Mesh to ") + filename + QString(" Done")));
+	//emit(operatorInfo(QString("Write Mesh to ") + filename + QString(" Done")));
 }
 
 void RenderingWidget::LoadTexture()
 {
-	QString filename = QFileDialog::getOpenFileName(this, tr("Load Texture"),
-		"..", tr("Images(*.bmp *.jpg *.png *.jpeg)"));
-	if (filename.isEmpty())
-	{
-		emit(operatorInfo(QString("Load Texture Failed!")));
-		return;
-	}
-    
-    QByteArray filename_ba = filename.toLocal8Bit();
-    int width, height;
-    unsigned char* image = SOIL_load_image(filename_ba.data(), &width, &height, 0, SOIL_LOAD_RGB);
-
-	glGenTextures(1, &texture_[0]);
-    glBindTexture(GL_TEXTURE_2D, texture_[0]);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height,
-        GL_RGBA, GL_UNSIGNED_BYTE, image);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
-        height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-        image);
-    SOIL_free_image_data(image);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    
-    /* original code.
-	QImage tex1, buf;
-	if (!buf.load(filename))
-	{
-		//        QMessageBox::warning(this, tr("Load Fialed!"), tr("Cannot Load Image %1").arg(filenames.at(0)));
-		emit(operatorInfo(QString("Load Texture Failed!")));
-		return;
-
-	}
-    tex1 = buf;
-	glBindTexture(GL_TEXTURE_2D, texture_[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, tex1.width(), tex1.height(),
-		GL_RGBA, GL_UNSIGNED_BYTE, tex1.bits());
-    */
-	is_load_texture_ = true;
-	emit operatorInfo(QString("Load Texture from ") + filename + QString(" Done"));
+//	QString filename = QFileDialog::getOpenFileName(this, tr("Load Texture"),
+//		"..", tr("Images(*.bmp *.jpg *.png *.jpeg)"));
+//	if (filename.isEmpty())
+//	{
+//		emit(operatorInfo(QString("Load Texture Failed!")));
+//		return;
+//	}
+//    
+//    QByteArray filename_ba = filename.toLocal8Bit();
+//    int width, height;
+//    unsigned char* image = SOIL_load_image(filename_ba.data(), &width, &height, 0, SOIL_LOAD_RGB);
+//
+//	glGenTextures(1, &texture_[0]);
+//    glBindTexture(GL_TEXTURE_2D, texture_[0]);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+//    gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height,
+//        GL_RGBA, GL_UNSIGNED_BYTE, image);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
+//        height, 0, GL_RGB, GL_UNSIGNED_BYTE,
+//        image);
+//    SOIL_free_image_data(image);
+//    glBindTexture(GL_TEXTURE_2D, 0);
+//    
+//    /* original code.
+//	QImage tex1, buf;
+//	if (!buf.load(filename))
+//	{
+//		//        QMessageBox::warning(this, tr("Load Fialed!"), tr("Cannot Load Image %1").arg(filenames.at(0)));
+//		emit(operatorInfo(QString("Load Texture Failed!")));
+//		return;
+//
+//	}
+//    tex1 = buf;
+//	glBindTexture(GL_TEXTURE_2D, texture_[0]);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+//	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, tex1.width(), tex1.height(),
+//		GL_RGBA, GL_UNSIGNED_BYTE, tex1.bits());
+//    */
+//	is_load_texture_ = true;
+//	emit operatorInfo(QString("Load Texture from ") + filename + QString(" Done"));
 }
 
 void RenderingWidget::Compress()
 {
-    if (mesh_.vertices_empty())
-    {
-        emit operatorInfo(QString("Compress return: empty mesh."));
-        return;
-    }
-
-    // Main Logic for Compression.
-    CompressionSolution cs{ mesh_ };
-    cs.compress(precision_);
-    if(cs.ok())
-    {
-        // Success.
-        position_map_ = cs.getCompressedPositions();
-        difference_map_ = cs.getCompressedDifferences();
-        max_difference_ = cs.getMaxDifference();
-        compress_ok_ = true;
-        emit operatorInfo(QString("Compress() with precision = %0.").arg(precision_));
-    }
-    else
-    {
-        // Fail.
-        compress_ok_ = false;
-        emit operatorInfo(QString("Compress fail with msg = \"%0\"").arg(cs.msg()));
-    }
-    updateGL();
+//    if (mesh_.vertices_empty())
+//    {
+//        emit operatorInfo(QString("Compress return: empty mesh."));
+//        return;
+//    }
+//
+//    // Main Logic for Compression.
+//    CompressionSolution cs{ mesh_ };
+//    cs.compress(precision_);
+//    if(cs.ok())
+//    {
+//        // Success.
+//        position_map_ = cs.getCompressedPositions();
+//        difference_map_ = cs.getCompressedDifferences();
+//        max_difference_ = cs.getMaxDifference();
+//        compress_ok_ = true;
+//        emit operatorInfo(QString("Compress() with precision = %0.").arg(precision_));
+//    }
+//    else
+//    {
+//        // Fail.
+//        compress_ok_ = false;
+//        emit operatorInfo(QString("Compress fail with msg = \"%0\"").arg(cs.msg()));
+//    }
+//    updateGL();
 }
 
 void RenderingWidget::ChangePrecision(const QString& text)
 {
-    // Change Precision
-    int number;
-    bool ok;
-    number = text.toInt(&ok, 10); // extract number with base 10;
-    if (!ok)
-    {
-        emit operatorInfo(QString("Not a Integer, input=") + text);
-        return;
-    }
-    if (number <= 0)
-    {
-        emit operatorInfo(QString("Invalid input, input=") + text);
-        return;
-    }
-    precision_ = number;
-    emit operatorInfo(QString("Change precision to %0").arg(number));
+    //// Change Precision
+    //int number;
+    //bool ok;
+    //number = text.toInt(&ok, 10); // extract number with base 10;
+    //if (!ok)
+    //{
+    //    emit operatorInfo(QString("Not a Integer, input=") + text);
+    //    return;
+    //}
+    //if (number <= 0)
+    //{
+    //    emit operatorInfo(QString("Invalid input, input=") + text);
+    //    return;
+    //}
+    //precision_ = number;
+    //emit operatorInfo(QString("Change precision to %0").arg(number));
 }
 
 // For reference.
@@ -839,218 +851,218 @@ void RenderingWidget::CheckShowDiff(bool bv)
 
 void RenderingWidget::DrawAxes(bool bV)
 {
-	if (!bV)
-		return;
-	//x axis
-	glColor3f(1.0, 0.0, 0.0);
-	glBegin(GL_LINES);
-	glVertex3f(0, 0, 0);
-	glVertex3f(0.7, 0.0, 0.0);
-	glEnd();
-	glPushMatrix();
-	glTranslatef(0.7, 0, 0);
-	glRotatef(90, 0.0, 1.0, 0.0);
-	glutSolidCone(0.02, 0.06, 20, 10);
-	glPopMatrix();
-
-	//y axis
-	glColor3f(0.0, 1.0, 0.0);
-	glBegin(GL_LINES);
-	glVertex3f(0, 0, 0);
-	glVertex3f(0.0, 0.7, 0.0);
-	glEnd();
-
-	glPushMatrix();
-	glTranslatef(0.0, 0.7, 0);
-	glRotatef(90, -1.0, 0.0, 0.0);
-	glutSolidCone(0.02, 0.06, 20, 10);
-	glPopMatrix();
-
-	//z axis
-	glColor3f(0.0, 0.0, 1.0);
-	glBegin(GL_LINES);
-	glVertex3f(0, 0, 0);
-	glVertex3f(0.0, 0.0, 0.7);
-	glEnd();
-	glPushMatrix();
-	glTranslatef(0.0, 0, 0.7);
-	glutSolidCone(0.02, 0.06, 20, 10);
-	glPopMatrix();
-
-	glColor3f(1.0, 1.0, 1.0);
-}
-
-void RenderingWidget::DrawPoints(bool bv)
-{
-    if (!bv || mesh_.vertices_empty())
-        return;
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    if (DEBUG_BIG_POINT)
-    {
-        glPointSize(5.0);
-    }
-
-    glBegin(GL_POINTS);
-
-    for (auto v : mesh_.vertices())
-    {
-        auto pos = mesh_.point(v);
-        if (is_show_result_ && compress_ok_)
-            pos = position_map_[v];
-        auto nor = mesh_.normal(v);
-        glNormal3fv(nor.data());
-        glVertex3fv(pos.data());
-    }
-
-    glEnd();
-}
-
-void RenderingWidget::DrawEdge(bool bv)
-{
-    if (!bv || mesh_.vertices_empty())
-        return;
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    for (auto f : mesh_.faces())
-    {
-        glBegin(GL_LINE_LOOP);
-
-        auto he = mesh_.halfedge_handle(f);
-        do
-        {
-            auto v = mesh_.to_vertex_handle(he);
-            glNormal3fv(mesh_.normal(v).data());
-            if (is_show_result_ && compress_ok_)
-                glVertex3fv(position_map_[v].data());
-            else
-                glVertex3fv(mesh_.point(v).data());
-
-            he = mesh_.next_halfedge_handle(he);
-        } while (he != mesh_.halfedge_handle(f));
-
-        glEnd();
-    }
-
-    // different method [WRONG]
-/*
-    for (auto he : mesh_.halfedges())
-    {
-        glBegin(GL_LINE_LOOP);
-        auto v_from = mesh_.from_vertex_handle(he);
-        glVertex3fv(mesh_.point(v_from).data());
-        glNormal3fv(mesh_.normal(v_from).data());
-
-        auto v_to = mesh_.to_vertex_handle(he);
-        glVertex3fv(mesh_.point(v_to).data());
-        glNormal3fv(mesh_.normal(v_to).data());
-
-        glEnd();
-    }
-*/
+//	if (!bV)
+//		return;
+//	//x axis
+//	glColor3f(1.0, 0.0, 0.0);
+//	glBegin(GL_LINES);
+//	glVertex3f(0, 0, 0);
+//	glVertex3f(0.7, 0.0, 0.0);
+//	glEnd();
+//	glPushMatrix();
+//	glTranslatef(0.7, 0, 0);
+//	glRotatef(90, 0.0, 1.0, 0.0);
+//	glutSolidCone(0.02, 0.06, 20, 10);
+//	glPopMatrix();
+//
+//	//y axis
+//	glColor3f(0.0, 1.0, 0.0);
+//	glBegin(GL_LINES);
+//	glVertex3f(0, 0, 0);
+//	glVertex3f(0.0, 0.7, 0.0);
+//	glEnd();
+//
+//	glPushMatrix();
+//	glTranslatef(0.0, 0.7, 0);
+//	glRotatef(90, -1.0, 0.0, 0.0);
+//	glutSolidCone(0.02, 0.06, 20, 10);
+//	glPopMatrix();
+//
+//	//z axis
+//	glColor3f(0.0, 0.0, 1.0);
+//	glBegin(GL_LINES);
+//	glVertex3f(0, 0, 0);
+//	glVertex3f(0.0, 0.0, 0.7);
+//	glEnd();
+//	glPushMatrix();
+//	glTranslatef(0.0, 0, 0.7);
+//	glutSolidCone(0.02, 0.06, 20, 10);
+//	glPopMatrix();
+//
+//	glColor3f(1.0, 1.0, 1.0);
+//}
+//
+//void RenderingWidget::DrawPoints(bool bv)
+//{
+//    if (!bv || mesh_.vertices_empty())
+//        return;
+//
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    if (DEBUG_BIG_POINT)
+//    {
+//        glPointSize(5.0);
+//    }
+//
+//    glBegin(GL_POINTS);
+//
+//    for (auto v : mesh_.vertices())
+//    {
+//        auto pos = mesh_.point(v);
+//        if (is_show_result_ && compress_ok_)
+//            pos = position_map_[v];
+//        auto nor = mesh_.normal(v);
+//        glNormal3fv(nor.data());
+//        glVertex3fv(pos.data());
+//    }
+//
+//    glEnd();
+//}
+//
+//void RenderingWidget::DrawEdge(bool bv)
+//{
+//    if (!bv || mesh_.vertices_empty())
+//        return;
+//
+//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//
+//    for (auto f : mesh_.faces())
+//    {
+//        glBegin(GL_LINE_LOOP);
+//
+//        auto he = mesh_.halfedge_handle(f);
+//        do
+//        {
+//            auto v = mesh_.to_vertex_handle(he);
+//            glNormal3fv(mesh_.normal(v).data());
+//            if (is_show_result_ && compress_ok_)
+//                glVertex3fv(position_map_[v].data());
+//            else
+//                glVertex3fv(mesh_.point(v).data());
+//
+//            he = mesh_.next_halfedge_handle(he);
+//        } while (he != mesh_.halfedge_handle(f));
+//
+//        glEnd();
+//    }
+//
+//    // different method [WRONG]
+///*
+//    for (auto he : mesh_.halfedges())
+//    {
+//        glBegin(GL_LINE_LOOP);
+//        auto v_from = mesh_.from_vertex_handle(he);
+//        glVertex3fv(mesh_.point(v_from).data());
+//        glNormal3fv(mesh_.normal(v_from).data());
+//
+//        auto v_to = mesh_.to_vertex_handle(he);
+//        glVertex3fv(mesh_.point(v_to).data());
+//        glNormal3fv(mesh_.normal(v_to).data());
+//
+//        glEnd();
+//    }
+//*/
 }
 
 void RenderingWidget::DrawFace(bool bv)
 {
-    if (!bv || mesh_.vertices_empty())
-        return;
+    //if (!bv || mesh_.vertices_empty())
+    //    return;
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glBegin(GL_TRIANGLES);
+    //glBegin(GL_TRIANGLES);
 
-    if (is_show_result_ && compress_ok_)
-    {   // Show Result Mode
-        for (auto f : mesh_.faces())
-        {
-            auto he = mesh_.halfedge_handle(f);
-            do
-            {
-                auto v = mesh_.to_vertex_handle(he);
-                glNormal3fv(mesh_.normal(v).data());
-                glVertex3fv(position_map_[v].data());
+    //if (is_show_result_ && compress_ok_)
+    //{   // Show Result Mode
+    //    for (auto f : mesh_.faces())
+    //    {
+    //        auto he = mesh_.halfedge_handle(f);
+    //        do
+    //        {
+    //            auto v = mesh_.to_vertex_handle(he);
+    //            glNormal3fv(mesh_.normal(v).data());
+    //            glVertex3fv(position_map_[v].data());
 
-                he = mesh_.next_halfedge_handle(he);
-            } while (he != mesh_.halfedge_handle(f));
-        }
-    }
-    else if (is_show_diff_ && compress_ok_)
-    {   // Show diff Mode
-        CPseudoColorRGB  Psdc;  // 定义计算colormap对象
+    //            he = mesh_.next_halfedge_handle(he);
+    //        } while (he != mesh_.halfedge_handle(f));
+    //    }
+    //}
+    //else if (is_show_diff_ && compress_ok_)
+    //{   // Show diff Mode
+    //    CPseudoColorRGB  Psdc;  // 定义计算colormap对象
 
-        Psdc.SetPCRamp(0.0, 1.0);
-        Psdc.SetPCType(PCT_JET);    // 变换类型：红绿蓝
-        Psdc.SetPCValueRange(0.0, 1.0); // 定义范围
+    //    Psdc.SetPCRamp(0.0, 1.0);
+    //    Psdc.SetPCType(PCT_JET);    // 变换类型：红绿蓝
+    //    Psdc.SetPCValueRange(0.0, 1.0); // 定义范围
 
-        // 示范：如何计算值value所对应的rgb颜色
-        double color[3];
-        double value;
-        //Psdc.GetPC(color, value);  // 返回的color值范围为[0,255]
+    //    // 示范：如何计算值value所对应的rgb颜色
+    //    double color[3];
+    //    double value;
+    //    //Psdc.GetPC(color, value);  // 返回的color值范围为[0,255]
 
-        for (auto f : mesh_.faces())
-        {
-            auto he = mesh_.halfedge_handle(f);
-            do
-            {
-                auto v = mesh_.to_vertex_handle(he);
-                glNormal3fv(mesh_.normal(v).data());
-                Psdc.GetPC(color, difference_map_[v] / max_difference_);
-                glColor3f(color[0], color[1], color[2]);
-                glVertex3fv(mesh_.point(v).data());
+    //    for (auto f : mesh_.faces())
+    //    {
+    //        auto he = mesh_.halfedge_handle(f);
+    //        do
+    //        {
+    //            auto v = mesh_.to_vertex_handle(he);
+    //            glNormal3fv(mesh_.normal(v).data());
+    //            Psdc.GetPC(color, difference_map_[v] / max_difference_);
+    //            glColor3f(color[0], color[1], color[2]);
+    //            glVertex3fv(mesh_.point(v).data());
 
-                he = mesh_.next_halfedge_handle(he);
-            } while (he != mesh_.halfedge_handle(f));
-        }
-    }
-    else if (!is_low_poly_)
-    {   // Normal Mode
-        for (auto f : mesh_.faces())
-        {
-            auto he = mesh_.halfedge_handle(f);
-            do
-            {
-                auto v = mesh_.to_vertex_handle(he);
-                glNormal3fv(mesh_.normal(v).data());
-                glColor3f(1.0f, 1.0f, 1.0f);
-                glVertex3fv(mesh_.point(v).data());
+    //            he = mesh_.next_halfedge_handle(he);
+    //        } while (he != mesh_.halfedge_handle(f));
+    //    }
+    //}
+    //else if (!is_low_poly_)
+    //{   // Normal Mode
+    //    for (auto f : mesh_.faces())
+    //    {
+    //        auto he = mesh_.halfedge_handle(f);
+    //        do
+    //        {
+    //            auto v = mesh_.to_vertex_handle(he);
+    //            glNormal3fv(mesh_.normal(v).data());
+    //            glColor3f(1.0f, 1.0f, 1.0f);
+    //            glVertex3fv(mesh_.point(v).data());
 
-                he = mesh_.next_halfedge_handle(he);
-            } while (he != mesh_.halfedge_handle(f));
-        }
-    }
-    else 
-    {   // Low Poly Mode
-        for (auto f : mesh_.faces())
-        {
-            auto he = mesh_.halfedge_handle(f);
-            // Calculate the average normal of vertices of face.
-            Vec3f average_normal(0, 0, 0);
-            do
-            {
-                auto v = mesh_.to_vertex_handle(he);
-                auto norm_om = mesh_.normal(v).data();
-                Vec3f norm{ norm_om[0], norm_om[1], norm_om[2] };
-                average_normal += norm;
-                he = mesh_.next_halfedge_handle(he);
-            } while (he != mesh_.halfedge_handle(f));
-            // Use the average normal as the whole face.
-            average_normal /= 3.0f;
-            he = mesh_.halfedge_handle(f);
-            do
-            {
-                auto v = mesh_.to_vertex_handle(he);
-                glNormal3fv(average_normal.data());
-                glColor3f(1.0f, 1.0f, 1.0f);
-                glVertex3fv(mesh_.point(v).data());
+    //            he = mesh_.next_halfedge_handle(he);
+    //        } while (he != mesh_.halfedge_handle(f));
+    //    }
+    //}
+    //else 
+    //{   // Low Poly Mode
+    //    for (auto f : mesh_.faces())
+    //    {
+    //        auto he = mesh_.halfedge_handle(f);
+    //        // Calculate the average normal of vertices of face.
+    //        Vec3f average_normal(0, 0, 0);
+    //        do
+    //        {
+    //            auto v = mesh_.to_vertex_handle(he);
+    //            auto norm_om = mesh_.normal(v).data();
+    //            Vec3f norm{ norm_om[0], norm_om[1], norm_om[2] };
+    //            average_normal += norm;
+    //            he = mesh_.next_halfedge_handle(he);
+    //        } while (he != mesh_.halfedge_handle(f));
+    //        // Use the average normal as the whole face.
+    //        average_normal /= 3.0f;
+    //        he = mesh_.halfedge_handle(f);
+    //        do
+    //        {
+    //            auto v = mesh_.to_vertex_handle(he);
+    //            glNormal3fv(average_normal.data());
+    //            glColor3f(1.0f, 1.0f, 1.0f);
+    //            glVertex3fv(mesh_.point(v).data());
 
-                he = mesh_.next_halfedge_handle(he);
-            } while (he != mesh_.halfedge_handle(f));
-        }
-    }
+    //            he = mesh_.next_halfedge_handle(he);
+    //        } while (he != mesh_.halfedge_handle(f));
+    //    }
+    //}
 
-    glEnd();
+    //glEnd();
 }
 
 // No Usage in this project.
