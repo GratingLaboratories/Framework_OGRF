@@ -24,19 +24,28 @@ class OpenGLMesh
 {
 public:
     OpenGLMesh() = default;
-    OpenGLMesh(const QString &name);
     ~OpenGLMesh();
     void update();
+    void init();
     const TriMesh &mesh() const { return mesh_; }
     bool changed(); 
 
-    //private:
-    bool changed_;
-    TriMesh mesh_;
     std::vector<GLfloat> vbuffer;
     std::vector<GLuint>  ebuffer;
-    
+
+    QString name_;
+    QString file_location_;
+    QString file_name_;
+    QString mesh_extension_;
+    bool need_scale_;
+    bool need_centralize_;
+    float scale_;
+    QVector3D position_;
+
 private:
-    void mesh_unify(float scale = 1.0);
+    bool changed_;
+    TriMesh mesh_;
+
+    void mesh_unify(float scale = 1.0, bool centrailze = false);
 };
 

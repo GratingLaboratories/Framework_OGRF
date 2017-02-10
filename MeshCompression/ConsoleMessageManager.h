@@ -26,6 +26,13 @@ public:
             out << s.toStdString() << std::endl;
         }
     }
+    void log(const QString &s, const QString &s2, unsigned msg_code = DEFAULT_MAG) const
+    {
+        if (msg_code & msg_mask)
+        {
+            out << s.toStdString() << s2.toStdString() << std::endl;
+        }
+    }
     void log(const std::string &s, unsigned msg_code = DEFAULT_MAG) const
     {
         if (msg_code & msg_mask)

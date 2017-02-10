@@ -572,7 +572,12 @@ void RenderingWidget::ReadMesh()
     QTextCodec::setCodecForLocale(code);
     QByteArray byfilename = filename.toLocal8Bit();
 
-    test = OpenGLMesh(filename);
+    test = OpenGLMesh();
+    test.file_name_ = filename;
+    test.need_scale_ = true;
+    test.need_centralize_ = true;
+    test.scale_ = 1.0f;
+    test.init();
 
 	updateGL();
 }
