@@ -66,6 +66,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 	eye_direction_[2] = 1.0;
 
     //msg.enable(TRIVIAL_MSG);
+    msg.enable(BUFFER_INFO_MSG);
 
     init_time.start();
 
@@ -180,12 +181,12 @@ void RenderingWidget::paintGL()
     GLfloat *buffer;
     int i_buf = 0;
 
-    if (test.changed())
+    if (scene.changed())
     {
         vao->bind();
             vbo->bind();
-                vbo->allocate(test.vbuffer.data(), test.vbuffer.size() * sizeof(GLfloat));
-                veo->allocate(test.ebuffer.data(), test.ebuffer.size() * sizeof(GLuint));
+                vbo->allocate(scene.vbuffer.data(), scene.vbuffer.size() * sizeof(GLfloat));
+                veo->allocate(scene.ebuffer.data(), scene.ebuffer.size() * sizeof(GLuint));
             vbo->release();
         vao->release();        
     }
@@ -224,7 +225,7 @@ void RenderingWidget::paintGL()
 
                 shader_program_basic_phong_->setUniformValue("model", mat_model);
 
-                glDrawElements(GL_TRIANGLES, test.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
+                glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
             }
         }
         vao->release();

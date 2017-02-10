@@ -39,8 +39,12 @@ public:
     QString mesh_extension_;
     bool need_scale_;
     bool need_centralize_;
+    bool use_face_normal_;
     float scale_;
     QVector3D position_;
+    QVector3D color_;
+
+    static const QVector3D DEFAULT_COLOR;
 
 private:
     bool changed_;

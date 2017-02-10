@@ -8,6 +8,7 @@
 #define WARNING_MSG     0x08
 #define ERROR_MSG       0x10
 #define DEFAULT_MAG     0x20
+#define BUFFER_INFO_MSG 0x40
 
 class ConsoleMessageManager
 {
