@@ -1,6 +1,6 @@
 #pragma once
-// OpenMesh structures
-#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+#include "OpenMeshBasic.h"
+#include "TetrahedralizationSolution.h"
 #include <QString>
 #include <memory>
 #include <vector>
@@ -15,8 +15,6 @@
 #define VERTICES_PER_FACE           3
 
 #define INF                 9.9e9f
-
-typedef OpenMesh::TriMesh_ArrayKernelT<> TriMesh;
 
 using OpenMesh::VertexHandle;
 

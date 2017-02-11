@@ -33,6 +33,9 @@ void OpenGLMesh::init()
         ////mesh_.release_face_normals();
     }
 
+    TetrahedralizationSolution ts{ this->mesh_ };
+    ts.tetra();
+
     update();
 }
 

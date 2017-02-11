@@ -88,6 +88,9 @@
     <ClCompile Include="OpenGLScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TetrahedralizationSolution.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -124,6 +127,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QJson.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TetrahedralizationSolution.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenMeshBasic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
