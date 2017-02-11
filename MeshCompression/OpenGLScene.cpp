@@ -1,8 +1,19 @@
 #include "stdafx.h"
 #include "OpenGLScene.h"
 
+void OpenGLScene::clear()
+{
+    vbuffer.clear();
+    ebuffer.clear();
+    models_.clear();
+}
+
 bool OpenGLScene::open(const QString& name)
 {
+    clear();
+    msg_.reset_indent();
+    msg_.log("Read Scene from file ", name, INFO_MSG);
+
     QString file_content;
     QFile file;
     file.setFileName(name);
@@ -21,7 +32,8 @@ bool OpenGLScene::open(const QString& name)
             {
                 update();
                 msg_.log("build from json complete.", INFO_MSG);
-                msg_.log(QString("buffer size: VAO:%0\tVEO:%1").arg(vbuffer.size()).arg(ebuffer.size()), BUFFER_INFO_MSG);
+                msg_.log(QString("buffer size: VBO:%0\tVEO:%1").arg(vbuffer.size()).arg(ebuffer.size()), BUFFER_INFO_MSG);
+                msg_.log("", BUFFER_INFO_MSG);
                 return true;
             }
             else
@@ -58,10 +70,16 @@ QVector3D tran_arr_to_vec3(const QJsonArray &arr)
 
 bool OpenGLScene::BuildFromJson()
 {
+    msg_.log("Scene Info:", INFO_MSG);
+    msg_.indent(1);
     scene_name_ = json_["SceneName"].toString();
     scene_description_ = json_["Description"].toString();
     file_location_ = json_["FileLocation"].toString();
+    msg_.log("SceneName:\t", scene_name_, INFO_MSG);
+    msg_.log("Description:\t", scene_description_, INFO_MSG);
+    msg_.log("FileLocation:\t", file_location_, INFO_MSG);
 
+    msg_.indent(2);
     auto models_jarray = json_["Models"].toArray();
     for (auto ele : models_jarray)
     {
@@ -84,8 +102,12 @@ bool OpenGLScene::BuildFromJson()
 
         model->init();
         ref_mesh_from_name_[model->name_] = model;
+
+        msg_.log("Read mesh:\t", model->name_, INFO_MSG);
     }
 
+    msg_.log("", INFO_MSG);
+    msg_.reset_indent();
     return true;
 }
 

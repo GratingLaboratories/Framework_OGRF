@@ -31,7 +31,7 @@ using Vec3f_om = OpenMesh::Vec3f;
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     QOpenGLWidget(parent),
     ptr_mainwindow_(mainwindow),
-    eye_distance_(5.0),
+    //eye_distance_(5.0),
     is_draw_point_(true),
     is_draw_edge_(true),
     is_draw_face_(false),

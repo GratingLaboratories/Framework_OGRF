@@ -13,7 +13,7 @@
 class ConsoleMessageManager
 {
 public:
-    explicit ConsoleMessageManager(std::ostream &o) : out(o)
+    explicit ConsoleMessageManager(std::ostream &o) : out(o), indent_level(0)
     {
         // default setting;
         msg_mask = ERROR_MSG | WARNING_MSG | DATA_MSG | INFO_MSG | DEFAULT_MAG;
@@ -24,6 +24,8 @@ public:
     {
         if (msg_code & msg_mask)
         {
+            for (int i = 0; i < indent_level; ++i)
+                out << '\t';
             out << s.toStdString() << std::endl;
         }
     }
@@ -31,6 +33,8 @@ public:
     {
         if (msg_code & msg_mask)
         {
+            for (int i = 0; i < indent_level; ++i)
+                out << '\t';
             out << s.toStdString() << s2.toStdString() << std::endl;
         }
     }
@@ -48,10 +52,19 @@ public:
             out << s << std::endl;
         }
     }
+    void indent(int i)
+    {
+        indent_level = i;
+    }
+    void reset_indent()
+    {
+        indent_level = 0;
+    }
     ~ConsoleMessageManager() {  }
 
 private:
     std::ostream &out;
     unsigned      msg_mask;
+    int           indent_level;
 };
 

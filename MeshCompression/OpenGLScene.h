@@ -13,6 +13,7 @@ public:
     OpenGLScene() = delete;
     ~OpenGLScene();
     OpenGLScene(ConsoleMessageManager &msg) : msg_(msg) {  }
+    void clear();
     bool open(const QString &name);
     bool changed();
 
