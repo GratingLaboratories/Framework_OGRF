@@ -5,6 +5,12 @@ using OpenMesh::Vec3f;
 
 const QVector3D OpenGLMesh::DEFAULT_COLOR{42.f, 42.f, 42.f};
 
+bool _FileExists(QString path) {
+    QFileInfo check_file(path);
+    // check if file exists and if yes: Is it really a file and no directory?
+    return check_file.exists() && check_file.isFile();
+}
+
 void OpenGLMesh::init()
 {
     mesh_.request_vertex_normals();
@@ -14,6 +20,14 @@ void OpenGLMesh::init()
     if (!OpenMesh::IO::read_mesh(mesh_, mesh_file_name.toStdString(), opt))
     {
         std::cerr << "Error loading mesh_ from file " << mesh_file_name.toStdString() << std::endl;
+    }
+
+    // try find tetrahedralization.
+    if (!_FileExists(file_location_ + "tetra/" + file_name_ + TETRA_ELE_EXTENSION))
+    {
+        mesh_unify(1.0); // unify to 1.0 before tetra().
+        TetrahedralizationSolution ts{ this->mesh_, (file_location_ + "tetra/" + file_name_).toStdString() };
+        ts.tetra();
     }
 
     if (need_scale_)
@@ -32,9 +46,6 @@ void OpenGLMesh::init()
         ////// dispose the face normals, as we don't need them anymore
         ////mesh_.release_face_normals();
     }
-
-    TetrahedralizationSolution ts{ this->mesh_ };
-    ts.tetra();
 
     update();
 }
