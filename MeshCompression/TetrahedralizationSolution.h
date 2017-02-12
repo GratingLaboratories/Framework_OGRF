@@ -4,6 +4,7 @@
 #include <tetgen.h> 
 #include <string>
 #include <cstring>
+#include <memory>
 
 #define TETRA_ELE_EXTENSION ".ele"
 
