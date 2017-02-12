@@ -25,7 +25,8 @@ void OpenGLMesh::init()
     // try find tetrahedralization.
     if (!_FileExists(file_location_ + "tetra/" + file_name_ + TETRA_ELE_EXTENSION))
     {
-        mesh_unify(1.0); // unify to 1.0 before tetra().
+        TriMesh temp_mesh = this->mesh_;
+        mesh_unify(1.0, true, temp_mesh); // unify to 1.0 before tetra().
         TetrahedralizationSolution ts{ this->mesh_, (file_location_ + "tetra/" + file_name_).toStdString() };
         ts.tetra();
     }
@@ -208,6 +209,54 @@ void OpenGLMesh::mesh_unify(float scale, bool centralize)
             res = pt * scaleV;
         OpenMesh::Vec3f res_om{ res[0], res[1], res[2] };
         mesh_.set_point(v, res_om);
+    }
+    // REMARK: OpenMesh::Vec3f has conflict with Vec3f;
+}
+
+void OpenGLMesh::mesh_unify(float scale, bool centrailze, TriMesh& mesh) const
+{
+    using OpenMesh::Vec3f;
+
+    Vec3f max_pos(-INF, -INF, -INF);
+    Vec3f min_pos(+INF, +INF, +INF);
+
+    for (auto v : mesh.vertices())
+    {
+        auto point = mesh.point(v);
+        for (int i = 0; i < 3; i++)
+        {
+            float t = point[i];
+            if (t > max_pos[i])
+                max_pos[i] = t;
+            if (t < min_pos[i])
+                min_pos[i] = t;
+        }
+    }
+
+    float xmax = max_pos[0], ymax = max_pos[1], zmax = max_pos[2];
+    float xmin = min_pos[0], ymin = min_pos[1], zmin = min_pos[2];
+
+    // here we use height(z) as scale target.
+    float scaleX = xmax - xmin;
+    float scaleY = ymax - ymin;
+    float scaleZ = zmax - zmin;
+    float scaleMax = scaleZ;
+
+    //scaleMax = std::max(scaleX, scaleY);
+    //scaleMax = std::max(scaleMax, scaleZ);
+
+    float scaleV = scale / scaleMax;
+    Vec3f center((xmin + xmax) / 2.f, (ymin + ymax) / 2.f, (zmin + zmax) / 2.f);
+    for (auto v : mesh.vertices())
+    {
+        Vec3f pt = mesh.point(v);
+        Vec3f res;
+        if (centrailze)
+            res = (pt - center) * scaleV; // VS cannot detect some of the operation, fake error (in my computer)
+        else
+            res = pt * scaleV;
+        OpenMesh::Vec3f res_om{ res[0], res[1], res[2] };
+        mesh.set_point(v, res_om);
     }
     // REMARK: OpenMesh::Vec3f has conflict with Vec3f;
 }

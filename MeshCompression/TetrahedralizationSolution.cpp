@@ -7,7 +7,6 @@ bool TetrahedralizationSolution::tetra()
     tetgenio in, out;
     tetgenio::facet *f;
     tetgenio::polygon *p;
-    int i;
 
     // All indices start from 1.
     in.firstnumber = 0;
@@ -37,6 +36,7 @@ bool TetrahedralizationSolution::tetra()
         p = &f->polygonlist[0];
         p->numberofvertices = 3;
         p->vertexlist = new int[p->numberofvertices];
+
         in.facetmarkerlist[f_it.idx()] = 0;
 
         auto fv_it = mesh_.cfv_iter(f_it);
@@ -46,15 +46,7 @@ bool TetrahedralizationSolution::tetra()
             p->vertexlist[i++] = fv_it->idx();
         }
     }
-    
-    // Set 'in.facetmarkerlist'
-
-    //in.facetmarkerlist[0] = -1;
-    //in.facetmarkerlist[1] = -2;
-    //in.facetmarkerlist[2] = 0;
-    //in.facetmarkerlist[3] = 0;
-    //in.facetmarkerlist[4] = 0;
-    //in.facetmarkerlist[5] = 0;
+   
 
     // Tetrahedralize the PLC. Switches are chosen to read a PLC (p),
     //   do quality mesh generation (q) with a specified quality bound

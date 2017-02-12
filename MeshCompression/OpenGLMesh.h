@@ -49,5 +49,6 @@ private:
     TriMesh mesh_;
 
     void mesh_unify(float scale = 1.0, bool centrailze = false);
+    void mesh_unify(float scale, bool centrailze, TriMesh &mesh) const;
 };
 
