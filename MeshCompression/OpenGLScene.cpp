@@ -95,6 +95,7 @@ bool OpenGLScene::BuildFromJson()
         model->need_scale_ = model_jobj["NeedScale"].toBool();
         model->need_centralize_ = model_jobj["NeedCentralize"].toBool();
         model->use_face_normal_ = model_jobj["UseFaceNormal"].toBool();
+        model->show_tetra_ = model_jobj["ShowTetra"].toBool();
         model->scale_ = model_jobj["Scale"].toDouble();
         model->file_location_ = file_location_;
         model->file_name_ = model_jobj["FileName"].toString();

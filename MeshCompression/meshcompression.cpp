@@ -127,27 +127,28 @@ void MeshCompression::CreateStatusBar()
 void MeshCompression::CreateRenderGroup()
 {
     // Group Render
-    checkbox_point_ = new QCheckBox(tr("Point"), this);
+    checkbox_point_ = new QCheckBox(tr("Depth_Test"), this);
     connect(checkbox_point_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawPoint(bool)));
     checkbox_point_->setChecked(true);
 
-    checkbox_edge_ = new QCheckBox(tr("Edge"), this);
+    checkbox_edge_ = new QCheckBox(tr("Cull_Face"), this);
     connect(checkbox_edge_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawEdge(bool)));
     checkbox_edge_->setChecked(true);
 
     checkbox_face_ = new QCheckBox(tr("Face"), this);
     connect(checkbox_face_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawFace(bool)));
+    checkbox_face_->setChecked(true);
 
-    checkbox_light_ = new QCheckBox(tr("Light"), this);
+    checkbox_light_ = new QCheckBox(tr("LUNUSE"), this);
     connect(checkbox_light_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLight(bool)));
 
-    checkbox_texture_ = new QCheckBox(tr("Texture"), this);
+    checkbox_texture_ = new QCheckBox(tr("TUNUSE"), this);
     connect(checkbox_texture_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawTexture(bool)));
 
-    checkbox_axes_ = new QCheckBox(tr("Axes"), this);
+    checkbox_axes_ = new QCheckBox(tr("AUNUSE"), this);
     connect(checkbox_axes_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawAxes(bool)));
 
-    groupbox_render_ = new QGroupBox(tr("Render"), this);
+    groupbox_render_ = new QGroupBox(tr("RUNUSE"), this);
 
     // Group Option
     checkbox_lowpoly_ = new QCheckBox(tr("Low Poly"), this);

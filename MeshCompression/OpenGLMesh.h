@@ -4,6 +4,7 @@
 #include <QString>
 #include <memory>
 #include <vector>
+#include <array>
 
 #define ATTRIBUTE_POSITION_LOCATION 0
 #define ATTRIBUTE_POSITION_SIZE     3
@@ -18,6 +19,19 @@
 
 using OpenMesh::VertexHandle;
 
+struct Tetra
+{
+public:
+    int n_vertices;
+    int n_vertices_boundary;
+    int n_faces;
+    //int n_faces_boundary;
+    int n_tetras;
+    std::vector<OpenMesh::Vec3f> points; // boundary vertices before internal ones.
+    std::vector<std::array<int, 3>> face_vertices;
+    std::vector<std::array<int, 4>> tetra_vertices;
+};
+
 class OpenGLMesh
 {
 public:
@@ -29,6 +43,7 @@ public:
     bool changed(); 
 
     std::vector<GLfloat> vbuffer;
+    GLuint voffset;
     std::vector<GLuint>  ebuffer;
 
     QString name_;
@@ -38,7 +53,11 @@ public:
     bool need_scale_;
     bool need_centralize_;
     bool use_face_normal_;
+    bool show_tetra_;
     float scale_;
+    float scale_x;
+    float scale_y;
+    float scale_z;
     QVector3D position_;
     QVector3D color_;
 
@@ -48,7 +67,11 @@ private:
     bool changed_;
     TriMesh mesh_;
 
+    float get_sacle();
     void mesh_unify(float scale = 1.0, bool centrailze = false);
     void mesh_unify(float scale, bool centrailze, TriMesh &mesh) const;
+
+    void ReadTetra(const QString &name);
+    Tetra tetra_;
 };
 

@@ -34,7 +34,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     //eye_distance_(5.0),
     is_draw_point_(true),
     is_draw_edge_(true),
-    is_draw_face_(false),
+    is_draw_face_(true),
     is_draw_texture_(false),
     has_lighting_(false),
     is_low_poly_(false),
@@ -153,33 +153,28 @@ void RenderingWidget::paintGL()
     msg.log(QString("printGL()"), TRIVIAL_MSG);
 
     // OpenGL work.
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+
+    if (is_draw_point_)
+    {
+        glEnable(GL_DEPTH_TEST);
+    }
+    if (is_draw_edge_)
+    {
+        glEnable(GL_CULL_FACE);
+    }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
 
-    ////// Wire-frame mode.
-    ////// Any subsequent drawing calls will render the triangles in 
-    ////// wire-frame mode until we set it back to its default using 
-    ////// `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
-    ////glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // Wire-frame mode.
+    // Any subsequent drawing calls will render the triangles in 
+    // wire-frame mode until we set it back to its default using 
+    // `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
+    if (!is_draw_face_)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-    //GLfloat cubePositions[10][3] = {
-    //    { 0.0f,  0.0f,  0.0f },
-    //    { 2.0f,  5.0f, -15.0f },
-    //    { -1.5f, -2.2f, -2.5f },
-    //    { -3.8f, -2.0f, -12.3f },
-    //    { 2.4f, -0.4f, -3.5f },
-    //    { -1.7f,  3.0f, -7.5f },
-    //    { 1.3f, -2.0f, -2.5f },
-    //    { 1.5f,  2.0f, -2.5f },
-    //    { 1.5f,  0.2f, -1.5f },
-    //    { -1.3f,  1.0f, -1.5f },
-    //};
-
-    //GLfloat *buffer;
-    //int i_buf = 0;
 
     if (scene.changed())
     {
@@ -204,6 +199,7 @@ void RenderingWidget::paintGL()
 
             QMatrix4x4 arcball_mat{ ptr_arcball_->GetBallMatrix() };
 
+            shader_program_basic_phong_->setUniformValue("model", mat_model);
             shader_program_basic_phong_->setUniformValue("view", camera_.view_mat() * arcball_mat);
             shader_program_basic_phong_->setUniformValue("projection", mat_projection);
             if (light_dir_fix_)
@@ -212,47 +208,34 @@ void RenderingWidget::paintGL()
                 shader_program_basic_phong_->setUniformValue("lightDirFrom", camera_.direction());
             shader_program_basic_phong_->setUniformValue("viewPos", camera_.position());
 
-            for (GLuint i = 0; i < 1; i++)
-            {
-                mat_model = QMatrix4x4();
-                
-                //mat_model.translate(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2]);
-
-                //mat_model.rotate(static_cast<GLfloat>(init_time.elapsed()) / 50, 0.0f, 1.0f, 0.0f);
-
-                //GLfloat angle = 20.0f * i;
-                //mat_model.rotate(angle, 1.0f, 0.3f, 0.5f);
-
-                shader_program_basic_phong_->setUniformValue("model", mat_model);
-
-                glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
-            }
+            glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
         }
         vao->release();
     }
 
-    // TODO
-    glLineWidth(2.5);
-    glColor3f(1.0, 0.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(1.0, 0.0, 0.0);
-    glEnd();
-    glColor3f(0.0, 1.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0.0, 1.0, 0.0);
-    glEnd();
-    glColor3f(0.0, 1.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0.0, 0.0, 1.0);
-    glEnd();
+    //// TODO
+    //glLineWidth(2.5);
+    //glColor3f(1.0, 0.0, 0.0);
+    //glBegin(GL_LINES);
+    //glVertex3f(0.0, 0.0, 0.0);
+    //glVertex3f(1.0, 0.0, 0.0);
+    //glEnd();
+    //glColor3f(0.0, 1.0, 0.0);
+    //glBegin(GL_LINES);
+    //glVertex3f(0.0, 0.0, 0.0);
+    //glVertex3f(0.0, 1.0, 0.0);
+    //glEnd();
+    //glColor3f(0.0, 1.0, 0.0);
+    //glBegin(GL_LINES);
+    //glVertex3f(0.0, 0.0, 0.0);
+    //glVertex3f(0.0, 0.0, 1.0);
+    //glEnd();
 
     shader_program_basic_phong_->release();
 
     // Restore Polygon Mode to ensure the correctness of native painter
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glDisable(GL_CULL_FACE | GL_DEPTH_TEST);
     
     // Native Painter work.
     QPainter painter(this);
