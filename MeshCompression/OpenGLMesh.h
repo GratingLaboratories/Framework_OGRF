@@ -39,6 +39,7 @@ public:
     ~OpenGLMesh();
     void update();
     void init();
+    void tag_change();
     const TriMesh &mesh() const { return mesh_; }
     bool changed(); 
 

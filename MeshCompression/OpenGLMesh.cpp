@@ -57,6 +57,11 @@ void OpenGLMesh::init()
     update();
 }
 
+void OpenGLMesh::tag_change()
+{
+    changed_ = true;
+}
+
 OpenGLMesh::~OpenGLMesh()
 {
 }

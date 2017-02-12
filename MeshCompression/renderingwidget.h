@@ -10,6 +10,7 @@
 #include <memory>
 #include "OpenGLMesh.h"
 #include "OpenGLScene.h"
+#include "SimulatorBase.h"
 
 using trimesh::vec;
 using trimesh::point;
@@ -127,6 +128,8 @@ private:
     OpenGLMesh                  test;
     OpenGLScene                 scene;
     bool                        light_dir_fix_;
+
+    SimulatorBase              *sim;
 };
 
 #endif // RENDERINGWIDGET_H

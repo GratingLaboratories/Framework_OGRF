@@ -16,6 +16,7 @@ public:
     void clear();
     bool open(const QString &name);
     bool changed();
+    std::shared_ptr<OpenGLMesh> get(const QString &model_name) const;
 
     std::vector<GLfloat> vbuffer;
     std::vector<GLuint> ebuffer;

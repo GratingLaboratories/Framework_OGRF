@@ -139,7 +139,20 @@ bool OpenGLScene::changed()
     for (auto model : models_)
     {
         if (model->changed())
+        {
             changed = true;
+        }
     }
+    if (changed)
+        update();
     return changed;
+}
+
+std::shared_ptr<OpenGLMesh> OpenGLScene::get(const QString& model_name) const
+{
+    auto it = ref_mesh_from_name_.find(model_name);
+    if (it != ref_mesh_from_name_.end())
+        return it->second;
+    else
+        return nullptr;
 }

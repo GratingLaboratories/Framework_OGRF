@@ -14,14 +14,17 @@
 
 #define updateGL update
 
-#define DEBUG_BIG_POINT     false
-#define DEBUG_COLOR_POINT   false
+#define DEBUG_BIG_POINT         false
+#define DEBUG_COLOR_POINT       false
 
-#define ITERATION_MINIMUM   50
-#define ITERATION_LIMIT     1000
-#define ITERATION_EPSILON   1e-4
+#define ITERATION_MINIMUM       50
+#define ITERATION_LIMIT         1000
+#define ITERATION_EPSILON       1e-4
 
-#define INF                 9.9e9f
+#define INF                     9.9e9f
+
+#define FPS_LIMIT               60
+#define MINIMUN_FRAME_STEP_MS   0
 
 #define DEFAULT_CAMERA_POSITION { 3.0f, 3.0f, 1.5f }
 
@@ -45,10 +48,11 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     max_difference_(0),
     compress_ok_(false),
     msg(std::cout),
-    frame_rate_limit(60),
+    frame_rate_limit(FPS_LIMIT),
     fps(0),
     light_dir_fix_(false),
-    scene(msg)
+    scene(msg),
+    sim(nullptr)
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
@@ -242,8 +246,13 @@ void RenderingWidget::paintGL()
     // Show FPS.
     painter.setPen(Qt::white);
     painter.setFont(QFont{ "PT Mono", 12 });
-    painter.drawText(this->width() / 15, this->height() / 15, 
-        QString("FPS: %0").arg(fps));
+    painter.drawText(this->width() / 15, this->height() / 15,
+        QString("FPS: %0").arg(fps, 0, 'f', 1));
+    if (sim != nullptr)
+    {
+        painter.drawText(this->width() / 15, this->height() / 15 * 2,
+        QString("t=%0").arg(sim->get_time(), 0, 'f', 3));
+    }
     painter.end();
 }
 
@@ -275,9 +284,14 @@ void RenderingWidget::timerEvent()
         .arg(last_time.msecsTo(QTime::currentTime()))
         , TRIVIAL_MSG);
     last_time = QTime::currentTime();
+    if (sim != nullptr)
+    {
+        sim->simulate(sim->get_time() + 0.1); // current time, in fact.
+    }
+
 	updateGL();
 
-    timer->start(1000 / frame_rate_limit);
+    timer->start(1000 / frame_rate_limit + MINIMUN_FRAME_STEP_MS);
 }
 
 void RenderingWidget::mousePressEvent(QMouseEvent *e)
@@ -578,6 +592,8 @@ void RenderingWidget::ReadScene()
 
     scene.open(filename);
 
+    sim = new SimulatorBase(scene);
+    sim->init(0.0f);
 
     //test = OpenGLMesh();
     //test.file_name_ = filename;
