@@ -89,12 +89,6 @@ Vec3f qvec2vec3f(const QVector3D &qc)
 
 void OpenGLMesh::update()
 {
-    // test
-    auto temp = mesh_;
-    temp.clear();
-    auto a = mesh_.n_vertices();
-    auto b = temp.n_vertices();
-
     vbuffer.clear();
     ebuffer.clear();
     int i = 0;
