@@ -16,10 +16,11 @@
 #define VERTICES_PER_FACE           3
 
 #define INF                 9.9e9f
+#define PI                  3.1415926f
 
 using OpenMesh::VertexHandle;
 
-struct Tetra
+struct TetraMesh
 {
 public:
     int n_vertices;
@@ -27,9 +28,15 @@ public:
     int n_faces;
     //int n_faces_boundary;
     int n_tetras;
-    std::vector<OpenMesh::Vec3f> points; // boundary vertices before internal ones.
+    std::vector<OpenMesh::Vec3f> point; // boundary vertices before internal ones.
     std::vector<std::array<int, 3>> face_vertices;
     std::vector<std::array<int, 4>> tetra_vertices;
+
+    QVector3D point_qv(int i) 
+    { 
+        auto p = point[i];
+        return{ p[0], p[1], p[2] };
+    }
 };
 
 class OpenGLMesh
@@ -40,7 +47,9 @@ public:
     void update();
     void init();
     void tag_change();
-    const TriMesh &mesh() const { return mesh_; }
+    void set_point(int idx, QVector3D p);
+    TriMesh &mesh() { return mesh_; }
+    TetraMesh &tmesh() { return tetra_; }
     bool changed(); 
 
     std::vector<GLfloat> vbuffer;
@@ -73,6 +82,6 @@ private:
     void mesh_unify(float scale, bool centrailze, TriMesh &mesh) const;
 
     void ReadTetra(const QString &name);
-    Tetra tetra_;
+    TetraMesh tetra_;
 };
 

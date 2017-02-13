@@ -124,11 +124,8 @@ void OpenGLScene::update()
         ebuffer.insert(ebuffer.end(), model->ebuffer.cbegin(), model->ebuffer.cend());
         std::for_each(ebuffer.begin() + fcnt * VERTICES_PER_FACE, ebuffer.end(), [vcnt](GLuint &x) { x += vcnt; });
         vcnt += model->vbuffer.size() / TOTAL_ATTRIBUTE_SIZE;
-        fcnt += model->mesh().n_faces();
+        fcnt += model->ebuffer.size() / VERTICES_PER_FACE;
     }
-
-
-    //assert(ebuffer.size() == mesh_.n_faces() * VERTICES_PER_FACE);
 }
 
 // return whether buffer should get renew.

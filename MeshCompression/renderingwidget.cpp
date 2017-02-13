@@ -251,7 +251,7 @@ void RenderingWidget::paintGL()
     if (sim != nullptr)
     {
         painter.drawText(this->width() / 15, this->height() / 15 * 2,
-        QString("t=%0").arg(sim->get_time(), 0, 'f', 3));
+        QString("t=%0s").arg(sim->get_time(), 0, 'f', 3));
     }
     painter.end();
 }
@@ -286,7 +286,7 @@ void RenderingWidget::timerEvent()
     last_time = QTime::currentTime();
     if (sim != nullptr)
     {
-        sim->simulate(sim->get_time() + 0.1); // current time, in fact.
+        sim->simulate(sim->get_time() + delta_time * 0.00001f); // current time, in fact.
     }
 
 	updateGL();
@@ -592,7 +592,7 @@ void RenderingWidget::ReadScene()
 
     scene.open(filename);
 
-    sim = new SimulatorBase(scene);
+    sim = new SimulatorSimpleFED(scene);
     sim->init(0.0f);
 
     //test = OpenGLMesh();

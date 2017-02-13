@@ -62,6 +62,17 @@ void OpenGLMesh::tag_change()
     changed_ = true;
 }
 
+Vec3f qvec2vec3f(const QVector3D &qc)
+{
+    return{ qc[0], qc[1], qc[2] };
+}
+
+void OpenGLMesh::set_point(int idx, QVector3D p)
+{
+    auto v_handle = mesh_.vertex_handle(idx);
+    mesh_.set_point(v_handle, qvec2vec3f(p - position_));
+}
+
 OpenGLMesh::~OpenGLMesh()
 {
 }
@@ -94,11 +105,6 @@ Vec3f trans_coord(Vec3f &p)
     return{ p[2], p[0], p[1] };
 }
 
-Vec3f qvec2vec3f(const QVector3D &qc)
-{
-    return{ qc[0], qc[1], qc[2] };
-}
-
 void OpenGLMesh::update()
 {
     vbuffer.clear();
@@ -109,7 +115,7 @@ void OpenGLMesh::update()
 
         for (int v_i = 0; v_i < tetra_.n_vertices; ++v_i)
         {
-            _push_vec(vbuffer, tetra_.points[v_i] + qvec2vec3f(position_));
+            _push_vec(vbuffer, tetra_.point[v_i]);
 
             if (v_i < tetra_.n_vertices_boundary)
             {
@@ -125,9 +131,9 @@ void OpenGLMesh::update()
             else
             {
                 _push_vec(vbuffer, 
-                    tetra_.points[v_i][0] / scale_x / 2 + 0.5f,
-                    tetra_.points[v_i][1] / scale_y / 2 + 0.5f,
-                    tetra_.points[v_i][2] / scale_z / 2 + 0.5f
+                    sinf(tetra_.point[v_i][0] / scale_x * PI) * 0.5f + 0.5f,
+                    sinf(tetra_.point[v_i][1] / scale_y * PI) * 0.5f + 0.5f,
+                    sinf(tetra_.point[v_i][2] / scale_z * PI) * 0.5f + 0.5f
                 );
                 
             }
@@ -408,7 +414,7 @@ void OpenGLMesh::ReadTetra(const QString& name)
 
             // Note that tetra info in files are based on
             // identity-unified mesh.
-            tetra_.points.push_back({ x * scale_, y * scale_, z * scale_ });
+            tetra_.point.push_back(qvec2vec3f(position_) + Vec3f{ x * scale_, y * scale_, z * scale_ });
         }
 
         input_node.close();
@@ -450,4 +456,5 @@ void OpenGLMesh::ReadTetra(const QString& name)
 
         input_ele.close();
     }
+
 }
