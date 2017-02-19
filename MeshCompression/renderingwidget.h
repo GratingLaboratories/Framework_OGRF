@@ -128,7 +128,7 @@ private:
     OpenGLMesh                  test;
     OpenGLScene                 scene;
     bool                        light_dir_fix_;
-
+    int                         frame;
     SimulatorBase              *sim;
 };
 

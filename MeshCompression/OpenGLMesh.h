@@ -37,6 +37,19 @@ public:
         auto p = point[i];
         return{ p[0], p[1], p[2] };
     }
+
+    TetraMesh copy() const
+    {
+        TetraMesh t;
+        t.n_vertices = n_vertices;
+        t.n_vertices_boundary = n_vertices_boundary;
+        t.n_faces = n_faces;
+        t.n_tetras = n_tetras;
+        t.point = point;
+        t.face_vertices = face_vertices;
+        t.tetra_vertices = tetra_vertices;
+        return t;
+    }
 };
 
 class OpenGLMesh
@@ -65,6 +78,7 @@ public:
     bool use_face_normal_;
     bool show_tetra_;
     float scale_;
+    QVector3D center_;
     float scale_x;
     float scale_y;
     float scale_z;

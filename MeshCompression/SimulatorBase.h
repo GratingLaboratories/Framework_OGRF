@@ -31,6 +31,28 @@ protected:
     double dt;
 };
 
+class SimulatorSimpleSpring: public SimulatorBase
+{
+public:
+    explicit SimulatorSimpleSpring(OpenGLScene& scene) : SimulatorBase(scene) {  }
+    ~SimulatorSimpleSpring() override {  };
+    void init(const double& t) override;
+    void simulate_util() override;
+    void simulate_rebuild() override;
+
+protected:
+    QVector3D x_0;
+    std::shared_ptr<Model> ball;
+    std::shared_ptr<Model> ground;
+    std::vector<Vector3f> velocity;
+    std::vector<Vector3f> position;
+    std::vector<Vector3f> position_original;
+    std::vector<float> tetra_volume;
+    std::vector<float> vert_volume;
+    //std::vector<Matrix3f> X_bar;
+    TetraMesh tmesh_originial;
+};
+
 class SimulatorSimpleFED : public SimulatorBase
 {
 public:

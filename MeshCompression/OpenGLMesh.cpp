@@ -29,7 +29,7 @@ void OpenGLMesh::init()
     {
         TriMesh temp_mesh = this->mesh_;
         mesh_unify(1.0, true, temp_mesh); // unify to 1.0 before tetra().
-        TetrahedralizationSolution ts{ this->mesh_, (tetra_name).toStdString() };
+        TetrahedralizationSolution ts{ temp_mesh, (tetra_name).toStdString() };
         ts.tetra();
     }
 
@@ -65,6 +65,10 @@ void OpenGLMesh::tag_change()
 Vec3f qvec2vec3f(const QVector3D &qc)
 {
     return{ qc[0], qc[1], qc[2] };
+}
+QVector3D qvec2vec3f(const Vec3f &v)
+{
+    return{ v[0], v[1], v[2] };
 }
 
 void OpenGLMesh::set_point(int idx, QVector3D p)
@@ -109,6 +113,7 @@ void OpenGLMesh::update()
 {
     vbuffer.clear();
     ebuffer.clear();
+    //mesh_.update_normals();
     int i = 0;
     if (show_tetra_)
     {
@@ -131,11 +136,10 @@ void OpenGLMesh::update()
             else
             {
                 _push_vec(vbuffer, 
-                    sinf(tetra_.point[v_i][0] / scale_x * PI) * 0.5f + 0.5f,
+                    cosf(tetra_.point[v_i][0] / scale_x * PI) * 0.5f + 0.5f,
                     sinf(tetra_.point[v_i][1] / scale_y * PI) * 0.5f + 0.5f,
                     sinf(tetra_.point[v_i][2] / scale_z * PI) * 0.5f + 0.5f
-                );
-                
+                );                                
             }
 
             if (v_i < tetra_.n_vertices_boundary)
@@ -317,15 +321,19 @@ void OpenGLMesh::mesh_unify(float scale, bool centralize)
     float scaleZ = zmax - zmin;
     float scaleMax = scaleZ;
 
-    scale_x = scaleX;
-    scale_y = scaleY;
-    scale_z = scaleZ;
-
     //scaleMax = std::max(scaleX, scaleY);
     //scaleMax = std::max(scaleMax, scaleZ);
 
     float scaleV = scale / scaleMax;
+
+    scale_x = scaleX * scaleV;
+    scale_y = scaleY * scaleV;
+    scale_z = scaleZ * scaleV;
+
     Vec3f center((xmin + xmax) / 2.f, (ymin + ymax) / 2.f, (zmin + zmax) / 2.f);
+    center_ = qvec2vec3f(center);
+    if (centralize == false)
+        center_ = { 0,0,0 };
     for (auto v : mesh_.vertices())
     {
         Vec3f pt = mesh_.point(v);
@@ -414,7 +422,11 @@ void OpenGLMesh::ReadTetra(const QString& name)
 
             // Note that tetra info in files are based on
             // identity-unified mesh.
-            tetra_.point.push_back(qvec2vec3f(position_) + Vec3f{ x * scale_, y * scale_, z * scale_ });
+            tetra_.point.push_back(qvec2vec3f(position_) + Vec3f{
+                x * scale_,
+                y * scale_,
+                z * scale_
+            });
         }
 
         input_node.close();

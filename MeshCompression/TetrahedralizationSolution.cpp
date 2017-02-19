@@ -52,7 +52,7 @@ bool TetrahedralizationSolution::tetra()
     //   do quality mesh generation (q) with a specified quality bound
     //   (1.414), and apply a maximum volume constraint (a0.1).
 
-    tetrahedralize("pq1.414a0.1", &in, &out);
+    tetrahedralize("pq2.5", &in, &out);
 
     in.save_nodes(name_ori_);
     in.save_poly(name_ori_);

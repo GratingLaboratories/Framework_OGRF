@@ -217,23 +217,19 @@ void RenderingWidget::paintGL()
         vao->release();
     }
 
-    //// TODO
+    // TODO
     //glLineWidth(2.5);
-    //glColor3f(1.0, 0.0, 0.0);
-    //glBegin(GL_LINES);
-    //glVertex3f(0.0, 0.0, 0.0);
-    //glVertex3f(1.0, 0.0, 0.0);
-    //glEnd();
-    //glColor3f(0.0, 1.0, 0.0);
-    //glBegin(GL_LINES);
-    //glVertex3f(0.0, 0.0, 0.0);
-    //glVertex3f(0.0, 1.0, 0.0);
-    //glEnd();
-    //glColor3f(0.0, 1.0, 0.0);
-    //glBegin(GL_LINES);
-    //glVertex3f(0.0, 0.0, 0.0);
-    //glVertex3f(0.0, 0.0, 1.0);
-    //glEnd();
+    glColor3f(1.0, 0.0, 0.0);
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(10.0, 0.0, 0.0);
+    glEnd();
+    glColor3f(0.0, 1.0, 0.0);
+    glBegin(GL_LINES);
+    glVertex3f(0.0, 0.0, 0.0);
+    glVertex3f(0.0, 10.0, 0.0);
+    glEnd();
+
 
     shader_program_basic_phong_->release();
 
@@ -286,7 +282,15 @@ void RenderingWidget::timerEvent()
     last_time = QTime::currentTime();
     if (sim != nullptr)
     {
-        sim->simulate(sim->get_time() + delta_time * 0.00001f); // current time, in fact.
+       // sim->simulate(sim->get_time() + delta_time * 0.00001f); // current time, in fact.
+        auto t = sim->get_time();
+        if (frame % 10 == 80)
+        {
+            QImage image = grabFramebuffer();
+            image.save(QString("images/%0/%1.png").arg("spring").arg(frame / 10), "PNG");
+        }
+        sim->simulate(t + 0.0001f); // current time, in fact.
+        frame++;
     }
 
 	updateGL();
@@ -592,8 +596,9 @@ void RenderingWidget::ReadScene()
 
     scene.open(filename);
 
-    sim = new SimulatorSimpleFED(scene);
-    sim->init(0.0f);
+    //sim = new SimulatorSimpleSpring(scene);
+    //sim = new SimulatorSimpleFED(scene);
+    //sim->init(0.0f);
 
     //test = OpenGLMesh();
     //test.file_name_ = filename;
@@ -602,6 +607,7 @@ void RenderingWidget::ReadScene()
     //test.scale_ = 1.0f;
     //test.init();
 
+    frame = 0;
 	updateGL();
 }
 
