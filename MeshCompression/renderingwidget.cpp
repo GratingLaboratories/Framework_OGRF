@@ -5,11 +5,12 @@
 #include <QFileDialog>
 #include <iostream>
 #include <QTextCodec>
-//#include <SOIL/SOIL.h>
 #include "ArcBall.h"
 #include "globalFunctions.h"
 #include "HE_mesh/Vec.h"
 #include "CompressionSolution.h"
+
+#include "GlobalConfig.h"
 //#include "PsudoColorRGB.h"
 
 #define updateGL update
@@ -23,18 +24,12 @@
 
 #define INF                     9.9e9f
 
-#define FPS_LIMIT               60
-#define MINIMUN_FRAME_STEP_MS   0
-
-#define DEFAULT_CAMERA_POSITION { 3.0f, 3.0f, 1.5f }
-
 typedef trimesh::vec3  Vec3f;
 using Vec3f_om = OpenMesh::Vec3f;
 
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     QOpenGLWidget(parent),
     ptr_mainwindow_(mainwindow),
-    //eye_distance_(5.0),
     is_draw_point_(true),
     is_draw_edge_(true),
     is_draw_face_(true),
@@ -43,24 +38,20 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     is_low_poly_(false),
     is_show_result_(false),
     is_show_diff_(false),
-    background_color_(40, 40, 80),
+    background_color_(32, 64, 128),
     precision_(100),
     max_difference_(0),
     compress_ok_(false),
     msg(std::cout),
     frame_rate_limit(FPS_LIMIT),
     fps(0),
-    light_dir_fix_(false),
     scene(msg),
+    light_dir_fix_(false),
     sim(nullptr)
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
     setFocusPolicy(Qt::StrongFocus);
-
-    //scene.open("scene/test/test.scene");
-
-	ptr_arcball_ = new CArcBall(width(), height());
 
 	is_load_texture_ = false;
 	is_draw_axes_ = false;
@@ -84,7 +75,6 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 
 RenderingWidget::~RenderingWidget()
 {
-	SafeDelete(ptr_arcball_);
     SafeDelete(timer);
     makeCurrent();
     vbo->destroy();
@@ -170,7 +160,11 @@ void RenderingWidget::paintGL()
     }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glClearColor(0.2f, 0.3f, 0.5f, 1.0f);
+    
+    glClearColor(background_color_.redF(),
+        background_color_.greenF(),
+        background_color_.blueF(),
+        1.0f);
 
     // Wire-frame mode.
     // Any subsequent drawing calls will render the triangles in 
@@ -201,10 +195,8 @@ void RenderingWidget::paintGL()
                 float(this->width()) / float(this->height()),
                 0.1f, 100.f);
 
-            QMatrix4x4 arcball_mat{ ptr_arcball_->GetBallMatrix() };
-
             shader_program_basic_phong_->setUniformValue("model", mat_model);
-            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat() * arcball_mat);
+            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat());
             shader_program_basic_phong_->setUniformValue("projection", mat_projection);
             if (light_dir_fix_)
                 shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
@@ -230,7 +222,6 @@ void RenderingWidget::paintGL()
     glVertex3f(0.0, 10.0, 0.0);
     glEnd();
 
-
     shader_program_basic_phong_->release();
 
     // Restore Polygon Mode to ensure the correctness of native painter
@@ -252,9 +243,12 @@ void RenderingWidget::paintGL()
     painter.end();
 }
 
+// calculate FPS,
+// take a current fps value to update
+// return the average of previous values
 float update_fps(float this_fps)
 {
-    static const int fps_stat_cnt = 20;
+    static const int fps_stat_cnt = FPS_UPDATE_STEP;
     static float fps_vec[fps_stat_cnt] = { 0 };
     static float old_fps = 0.0f;
     static int count = 0;
@@ -274,20 +268,31 @@ float update_fps(float this_fps)
 
 void RenderingWidget::timerEvent()
 {
+    // Calculate delta time.
     auto delta_time = last_time.msecsTo(QTime::currentTime());
+
+    // Update FPS
     fps = update_fps(1000.0 / delta_time);
+    // Emit msg of delta time (TRIVIAL level)
     msg.log(QString("\rdelta time = %0 ms")
         .arg(last_time.msecsTo(QTime::currentTime()))
         , TRIVIAL_MSG);
+    // State current time as `last_time`
     last_time = QTime::currentTime();
+    
+    // Screen-Shot
     if (sim != nullptr)
     {
-       // sim->simulate(sim->get_time() + delta_time * 0.00001f); // current time, in fact.
         auto t = sim->get_time();
-        if (frame % 10 == 80)
+        if (SCREEN_SHOT_ENABLE &&
+            frame >= SCREEN_SHOT_FRAME_BEGIN && 
+            frame <= SCREEN_SHOT_FRAME_END && 
+            frame % SCREEN_SHOT_FRAME_STEP == 0)
         {
             QImage image = grabFramebuffer();
-            image.save(QString("images/%0/%1.png").arg("spring").arg(frame / 10), "PNG");
+            image.save(QString("images/%0/%1.png")
+                .arg("spring").arg(frame / SCREEN_SHOT_FRAME_STEP), "PNG");
+            emit(operatorInfo(QString("Screen-Shot at frame %0").arg(frame / SCREEN_SHOT_FRAME_STEP)));
         }
         sim->simulate(t + 0.0001f); // current time, in fact.
         frame++;
@@ -295,6 +300,7 @@ void RenderingWidget::timerEvent()
 
 	updateGL();
 
+    // re-start timer for next frame event
     timer->start(1000 / frame_rate_limit + MINIMUN_FRAME_STEP_MS);
 }
 
@@ -684,55 +690,10 @@ void RenderingWidget::LoadTexture()
 //	emit operatorInfo(QString("Load Texture from ") + filename + QString(" Done"));
 }
 
-void RenderingWidget::Compress()
+void RenderingWidget::ControlLineEvent(const QString &cmd_text)
 {
-//    if (mesh_.vertices_empty())
-//    {
-//        emit operatorInfo(QString("Compress return: empty mesh."));
-//        return;
-//    }
-//
-//    // Main Logic for Compression.
-//    CompressionSolution cs{ mesh_ };
-//    cs.compress(precision_);
-//    if(cs.ok())
-//    {
-//        // Success.
-//        position_map_ = cs.getCompressedPositions();
-//        difference_map_ = cs.getCompressedDifferences();
-//        max_difference_ = cs.getMaxDifference();
-//        compress_ok_ = true;
-//        emit operatorInfo(QString("Compress() with precision = %0.").arg(precision_));
-//    }
-//    else
-//    {
-//        // Fail.
-//        compress_ok_ = false;
-//        emit operatorInfo(QString("Compress fail with msg = \"%0\"").arg(cs.msg()));
-//    }
-//    updateGL();
+    emit operatorInfo(cmd_text);
 }
-
-void RenderingWidget::ChangePrecision(const QString& text)
-{
-    //// Change Precision
-    //int number;
-    //bool ok;
-    //number = text.toInt(&ok, 10); // extract number with base 10;
-    //if (!ok)
-    //{
-    //    emit operatorInfo(QString("Not a Integer, input=") + text);
-    //    return;
-    //}
-    //if (number <= 0)
-    //{
-    //    emit operatorInfo(QString("Invalid input, input=") + text);
-    //    return;
-    //}
-    //precision_ = number;
-    //emit operatorInfo(QString("Change precision to %0").arg(number));
-}
-
 // For reference.
 //void param_show(TriMesh &mesh, ParamSurf &param, int size = 512, int bdr = 10)
 //{
@@ -854,253 +815,253 @@ void RenderingWidget::CheckShowDiff(bool bv)
     updateGL();
 }
 
-void RenderingWidget::DrawAxes(bool bV)
-{
-//	if (!bV)
-//		return;
-//	//x axis
-//	glColor3f(1.0, 0.0, 0.0);
-//	glBegin(GL_LINES);
-//	glVertex3f(0, 0, 0);
-//	glVertex3f(0.7, 0.0, 0.0);
-//	glEnd();
-//	glPushMatrix();
-//	glTranslatef(0.7, 0, 0);
-//	glRotatef(90, 0.0, 1.0, 0.0);
-//	glutSolidCone(0.02, 0.06, 20, 10);
-//	glPopMatrix();
-//
-//	//y axis
-//	glColor3f(0.0, 1.0, 0.0);
-//	glBegin(GL_LINES);
-//	glVertex3f(0, 0, 0);
-//	glVertex3f(0.0, 0.7, 0.0);
-//	glEnd();
-//
-//	glPushMatrix();
-//	glTranslatef(0.0, 0.7, 0);
-//	glRotatef(90, -1.0, 0.0, 0.0);
-//	glutSolidCone(0.02, 0.06, 20, 10);
-//	glPopMatrix();
-//
-//	//z axis
-//	glColor3f(0.0, 0.0, 1.0);
-//	glBegin(GL_LINES);
-//	glVertex3f(0, 0, 0);
-//	glVertex3f(0.0, 0.0, 0.7);
-//	glEnd();
-//	glPushMatrix();
-//	glTranslatef(0.0, 0, 0.7);
-//	glutSolidCone(0.02, 0.06, 20, 10);
-//	glPopMatrix();
-//
-//	glColor3f(1.0, 1.0, 1.0);
+//void RenderingWidget::DrawAxes(bool bV)
+//{
+////	if (!bV)
+////		return;
+////	//x axis
+////	glColor3f(1.0, 0.0, 0.0);
+////	glBegin(GL_LINES);
+////	glVertex3f(0, 0, 0);
+////	glVertex3f(0.7, 0.0, 0.0);
+////	glEnd();
+////	glPushMatrix();
+////	glTranslatef(0.7, 0, 0);
+////	glRotatef(90, 0.0, 1.0, 0.0);
+////	glutSolidCone(0.02, 0.06, 20, 10);
+////	glPopMatrix();
+////
+////	//y axis
+////	glColor3f(0.0, 1.0, 0.0);
+////	glBegin(GL_LINES);
+////	glVertex3f(0, 0, 0);
+////	glVertex3f(0.0, 0.7, 0.0);
+////	glEnd();
+////
+////	glPushMatrix();
+////	glTranslatef(0.0, 0.7, 0);
+////	glRotatef(90, -1.0, 0.0, 0.0);
+////	glutSolidCone(0.02, 0.06, 20, 10);
+////	glPopMatrix();
+////
+////	//z axis
+////	glColor3f(0.0, 0.0, 1.0);
+////	glBegin(GL_LINES);
+////	glVertex3f(0, 0, 0);
+////	glVertex3f(0.0, 0.0, 0.7);
+////	glEnd();
+////	glPushMatrix();
+////	glTranslatef(0.0, 0, 0.7);
+////	glutSolidCone(0.02, 0.06, 20, 10);
+////	glPopMatrix();
+////
+////	glColor3f(1.0, 1.0, 1.0);
+////}
+////
+////void RenderingWidget::DrawPoints(bool bv)
+////{
+////    if (!bv || mesh_.vertices_empty())
+////        return;
+////
+////    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+////
+////    if (DEBUG_BIG_POINT)
+////    {
+////        glPointSize(5.0);
+////    }
+////
+////    glBegin(GL_POINTS);
+////
+////    for (auto v : mesh_.vertices())
+////    {
+////        auto pos = mesh_.point(v);
+////        if (is_show_result_ && compress_ok_)
+////            pos = position_map_[v];
+////        auto nor = mesh_.normal(v);
+////        glNormal3fv(nor.data());
+////        glVertex3fv(pos.data());
+////    }
+////
+////    glEnd();
+////}
+////
+////void RenderingWidget::DrawEdge(bool bv)
+////{
+////    if (!bv || mesh_.vertices_empty())
+////        return;
+////
+////    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+////
+////    for (auto f : mesh_.faces())
+////    {
+////        glBegin(GL_LINE_LOOP);
+////
+////        auto he = mesh_.halfedge_handle(f);
+////        do
+////        {
+////            auto v = mesh_.to_vertex_handle(he);
+////            glNormal3fv(mesh_.normal(v).data());
+////            if (is_show_result_ && compress_ok_)
+////                glVertex3fv(position_map_[v].data());
+////            else
+////                glVertex3fv(mesh_.point(v).data());
+////
+////            he = mesh_.next_halfedge_handle(he);
+////        } while (he != mesh_.halfedge_handle(f));
+////
+////        glEnd();
+////    }
+////
+////    // different method [WRONG]
+/////*
+////    for (auto he : mesh_.halfedges())
+////    {
+////        glBegin(GL_LINE_LOOP);
+////        auto v_from = mesh_.from_vertex_handle(he);
+////        glVertex3fv(mesh_.point(v_from).data());
+////        glNormal3fv(mesh_.normal(v_from).data());
+////
+////        auto v_to = mesh_.to_vertex_handle(he);
+////        glVertex3fv(mesh_.point(v_to).data());
+////        glNormal3fv(mesh_.normal(v_to).data());
+////
+////        glEnd();
+////    }
+////*/
 //}
 //
-//void RenderingWidget::DrawPoints(bool bv)
+//void RenderingWidget::DrawFace(bool bv)
 //{
-//    if (!bv || mesh_.vertices_empty())
-//        return;
+//    //if (!bv || mesh_.vertices_empty())
+//    //    return;
 //
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 //
-//    if (DEBUG_BIG_POINT)
-//    {
-//        glPointSize(5.0);
-//    }
+//    //glBegin(GL_TRIANGLES);
 //
-//    glBegin(GL_POINTS);
+//    //if (is_show_result_ && compress_ok_)
+//    //{   // Show Result Mode
+//    //    for (auto f : mesh_.faces())
+//    //    {
+//    //        auto he = mesh_.halfedge_handle(f);
+//    //        do
+//    //        {
+//    //            auto v = mesh_.to_vertex_handle(he);
+//    //            glNormal3fv(mesh_.normal(v).data());
+//    //            glVertex3fv(position_map_[v].data());
 //
-//    for (auto v : mesh_.vertices())
-//    {
-//        auto pos = mesh_.point(v);
-//        if (is_show_result_ && compress_ok_)
-//            pos = position_map_[v];
-//        auto nor = mesh_.normal(v);
-//        glNormal3fv(nor.data());
-//        glVertex3fv(pos.data());
-//    }
+//    //            he = mesh_.next_halfedge_handle(he);
+//    //        } while (he != mesh_.halfedge_handle(f));
+//    //    }
+//    //}
+//    //else if (is_show_diff_ && compress_ok_)
+//    //{   // Show diff Mode
+//    //    CPseudoColorRGB  Psdc;  // 定义计算colormap对象
 //
-//    glEnd();
+//    //    Psdc.SetPCRamp(0.0, 1.0);
+//    //    Psdc.SetPCType(PCT_JET);    // 变换类型：红绿蓝
+//    //    Psdc.SetPCValueRange(0.0, 1.0); // 定义范围
+//
+//    //    // 示范：如何计算值value所对应的rgb颜色
+//    //    double color[3];
+//    //    double value;
+//    //    //Psdc.GetPC(color, value);  // 返回的color值范围为[0,255]
+//
+//    //    for (auto f : mesh_.faces())
+//    //    {
+//    //        auto he = mesh_.halfedge_handle(f);
+//    //        do
+//    //        {
+//    //            auto v = mesh_.to_vertex_handle(he);
+//    //            glNormal3fv(mesh_.normal(v).data());
+//    //            Psdc.GetPC(color, difference_map_[v] / max_difference_);
+//    //            glColor3f(color[0], color[1], color[2]);
+//    //            glVertex3fv(mesh_.point(v).data());
+//
+//    //            he = mesh_.next_halfedge_handle(he);
+//    //        } while (he != mesh_.halfedge_handle(f));
+//    //    }
+//    //}
+//    //else if (!is_low_poly_)
+//    //{   // Normal Mode
+//    //    for (auto f : mesh_.faces())
+//    //    {
+//    //        auto he = mesh_.halfedge_handle(f);
+//    //        do
+//    //        {
+//    //            auto v = mesh_.to_vertex_handle(he);
+//    //            glNormal3fv(mesh_.normal(v).data());
+//    //            glColor3f(1.0f, 1.0f, 1.0f);
+//    //            glVertex3fv(mesh_.point(v).data());
+//
+//    //            he = mesh_.next_halfedge_handle(he);
+//    //        } while (he != mesh_.halfedge_handle(f));
+//    //    }
+//    //}
+//    //else 
+//    //{   // Low Poly Mode
+//    //    for (auto f : mesh_.faces())
+//    //    {
+//    //        auto he = mesh_.halfedge_handle(f);
+//    //        // Calculate the average normal of vertices of face.
+//    //        Vec3f average_normal(0, 0, 0);
+//    //        do
+//    //        {
+//    //            auto v = mesh_.to_vertex_handle(he);
+//    //            auto norm_om = mesh_.normal(v).data();
+//    //            Vec3f norm{ norm_om[0], norm_om[1], norm_om[2] };
+//    //            average_normal += norm;
+//    //            he = mesh_.next_halfedge_handle(he);
+//    //        } while (he != mesh_.halfedge_handle(f));
+//    //        // Use the average normal as the whole face.
+//    //        average_normal /= 3.0f;
+//    //        he = mesh_.halfedge_handle(f);
+//    //        do
+//    //        {
+//    //            auto v = mesh_.to_vertex_handle(he);
+//    //            glNormal3fv(average_normal.data());
+//    //            glColor3f(1.0f, 1.0f, 1.0f);
+//    //            glVertex3fv(mesh_.point(v).data());
+//
+//    //            he = mesh_.next_halfedge_handle(he);
+//    //        } while (he != mesh_.halfedge_handle(f));
+//    //    }
+//    //}
+//
+//    //glEnd();
 //}
 //
-//void RenderingWidget::DrawEdge(bool bv)
+//// No Usage in this project.
+//void RenderingWidget::DrawTexture(bool bv)
 //{
-//    if (!bv || mesh_.vertices_empty())
-//        return;
+//	//if (!bv)
+//	//	return;
+//	//if (mesh_.n_vertices() == 0 || !is_load_texture_)
+//	//	return;
+// //   if (!param.has_init())
+// //   {
+// //       param.setting(_method, _boundary);
+// //       param.init();
+// //   }
 //
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//	//glBindTexture(GL_TEXTURE_2D, texture_[0]);
 //
-//    for (auto f : mesh_.faces())
-//    {
-//        glBegin(GL_LINE_LOOP);
+// //   glEnable(GL_TEXTURE_2D);
 //
-//        auto he = mesh_.halfedge_handle(f);
-//        do
-//        {
-//            auto v = mesh_.to_vertex_handle(he);
-//            glNormal3fv(mesh_.normal(v).data());
-//            if (is_show_result_ && compress_ok_)
-//                glVertex3fv(position_map_[v].data());
-//            else
-//                glVertex3fv(mesh_.point(v).data());
+//	//glBegin(GL_TRIANGLES);
+// //   for (auto f : mesh_.faces())
+// //   {
+// //       auto he = mesh_.halfedge_handle(f);
+// //       do
+// //       {
+// //           auto v = mesh_.to_vertex_handle(he);
+// //           glTexCoord2fv(param.query(v).data());
+// //           glNormal3fv(mesh_.normal(v).data());
+// //           glVertex3fv(mesh_.point(v).data());
 //
-//            he = mesh_.next_halfedge_handle(he);
-//        } while (he != mesh_.halfedge_handle(f));
+// //           he = mesh_.next_halfedge_handle(he);
+// //       } while (he != mesh_.halfedge_handle(f));
+// //   }
 //
-//        glEnd();
-//    }
-//
-//    // different method [WRONG]
-///*
-//    for (auto he : mesh_.halfedges())
-//    {
-//        glBegin(GL_LINE_LOOP);
-//        auto v_from = mesh_.from_vertex_handle(he);
-//        glVertex3fv(mesh_.point(v_from).data());
-//        glNormal3fv(mesh_.normal(v_from).data());
-//
-//        auto v_to = mesh_.to_vertex_handle(he);
-//        glVertex3fv(mesh_.point(v_to).data());
-//        glNormal3fv(mesh_.normal(v_to).data());
-//
-//        glEnd();
-//    }
-//*/
-}
-
-void RenderingWidget::DrawFace(bool bv)
-{
-    //if (!bv || mesh_.vertices_empty())
-    //    return;
-
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //glBegin(GL_TRIANGLES);
-
-    //if (is_show_result_ && compress_ok_)
-    //{   // Show Result Mode
-    //    for (auto f : mesh_.faces())
-    //    {
-    //        auto he = mesh_.halfedge_handle(f);
-    //        do
-    //        {
-    //            auto v = mesh_.to_vertex_handle(he);
-    //            glNormal3fv(mesh_.normal(v).data());
-    //            glVertex3fv(position_map_[v].data());
-
-    //            he = mesh_.next_halfedge_handle(he);
-    //        } while (he != mesh_.halfedge_handle(f));
-    //    }
-    //}
-    //else if (is_show_diff_ && compress_ok_)
-    //{   // Show diff Mode
-    //    CPseudoColorRGB  Psdc;  // 定义计算colormap对象
-
-    //    Psdc.SetPCRamp(0.0, 1.0);
-    //    Psdc.SetPCType(PCT_JET);    // 变换类型：红绿蓝
-    //    Psdc.SetPCValueRange(0.0, 1.0); // 定义范围
-
-    //    // 示范：如何计算值value所对应的rgb颜色
-    //    double color[3];
-    //    double value;
-    //    //Psdc.GetPC(color, value);  // 返回的color值范围为[0,255]
-
-    //    for (auto f : mesh_.faces())
-    //    {
-    //        auto he = mesh_.halfedge_handle(f);
-    //        do
-    //        {
-    //            auto v = mesh_.to_vertex_handle(he);
-    //            glNormal3fv(mesh_.normal(v).data());
-    //            Psdc.GetPC(color, difference_map_[v] / max_difference_);
-    //            glColor3f(color[0], color[1], color[2]);
-    //            glVertex3fv(mesh_.point(v).data());
-
-    //            he = mesh_.next_halfedge_handle(he);
-    //        } while (he != mesh_.halfedge_handle(f));
-    //    }
-    //}
-    //else if (!is_low_poly_)
-    //{   // Normal Mode
-    //    for (auto f : mesh_.faces())
-    //    {
-    //        auto he = mesh_.halfedge_handle(f);
-    //        do
-    //        {
-    //            auto v = mesh_.to_vertex_handle(he);
-    //            glNormal3fv(mesh_.normal(v).data());
-    //            glColor3f(1.0f, 1.0f, 1.0f);
-    //            glVertex3fv(mesh_.point(v).data());
-
-    //            he = mesh_.next_halfedge_handle(he);
-    //        } while (he != mesh_.halfedge_handle(f));
-    //    }
-    //}
-    //else 
-    //{   // Low Poly Mode
-    //    for (auto f : mesh_.faces())
-    //    {
-    //        auto he = mesh_.halfedge_handle(f);
-    //        // Calculate the average normal of vertices of face.
-    //        Vec3f average_normal(0, 0, 0);
-    //        do
-    //        {
-    //            auto v = mesh_.to_vertex_handle(he);
-    //            auto norm_om = mesh_.normal(v).data();
-    //            Vec3f norm{ norm_om[0], norm_om[1], norm_om[2] };
-    //            average_normal += norm;
-    //            he = mesh_.next_halfedge_handle(he);
-    //        } while (he != mesh_.halfedge_handle(f));
-    //        // Use the average normal as the whole face.
-    //        average_normal /= 3.0f;
-    //        he = mesh_.halfedge_handle(f);
-    //        do
-    //        {
-    //            auto v = mesh_.to_vertex_handle(he);
-    //            glNormal3fv(average_normal.data());
-    //            glColor3f(1.0f, 1.0f, 1.0f);
-    //            glVertex3fv(mesh_.point(v).data());
-
-    //            he = mesh_.next_halfedge_handle(he);
-    //        } while (he != mesh_.halfedge_handle(f));
-    //    }
-    //}
-
-    //glEnd();
-}
-
-// No Usage in this project.
-void RenderingWidget::DrawTexture(bool bv)
-{
-	//if (!bv)
-	//	return;
-	//if (mesh_.n_vertices() == 0 || !is_load_texture_)
-	//	return;
- //   if (!param.has_init())
- //   {
- //       param.setting(_method, _boundary);
- //       param.init();
- //   }
-
-	//glBindTexture(GL_TEXTURE_2D, texture_[0]);
-
- //   glEnable(GL_TEXTURE_2D);
-
-	//glBegin(GL_TRIANGLES);
- //   for (auto f : mesh_.faces())
- //   {
- //       auto he = mesh_.halfedge_handle(f);
- //       do
- //       {
- //           auto v = mesh_.to_vertex_handle(he);
- //           glTexCoord2fv(param.query(v).data());
- //           glNormal3fv(mesh_.normal(v).data());
- //           glVertex3fv(mesh_.point(v).data());
-
- //           he = mesh_.next_halfedge_handle(he);
- //       } while (he != mesh_.halfedge_handle(f));
- //   }
-
-	//glEnd();
-}
+//	//glEnd();
+//}

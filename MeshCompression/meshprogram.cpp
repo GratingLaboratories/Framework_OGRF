@@ -1,7 +1,7 @@
 #include "stdafx.h"
 
 #include "renderingwidget.h"
-#include "meshcompression.h"
+#include "meshprogram.h"
 
 MeshCompression::MeshCompression(QWidget *parent)
     : QMainWindow(parent)
@@ -9,7 +9,6 @@ MeshCompression::MeshCompression(QWidget *parent)
     renderingwidget_ = new RenderingWidget(this);
     //renderingwidget_->grabKeyboard();
     setCentralWidget(new QWidget);
-
 
     // Default windows SIZE, minimize.
     renderingwidget_->setMinimumHeight(800);
@@ -23,12 +22,12 @@ MeshCompression::MeshCompression(QWidget *parent)
     CreateStatusBar();
     CreateRenderGroup();
 
-    // Vertical Box Layout
+    // Vertical Box Layout (on the left)
     QVBoxLayout *layout_left = new QVBoxLayout;
     layout_left->addWidget(groupbox_render_);
     layout_left->addStretch(1);
-    layout_left->addWidget(groupbox_option_);    
-    layout_left->addStretch(1);
+    //layout_left->addWidget(groupbox_option_);    
+    //layout_left->addStretch(1);
     layout_left->addWidget(groupbox_control_);
     layout_left->addStretch(2);
 
@@ -127,13 +126,13 @@ void MeshCompression::CreateStatusBar()
 void MeshCompression::CreateRenderGroup()
 {
     // Group Render
-    checkbox_point_ = new QCheckBox(tr("Depth_Test"), this);
-    connect(checkbox_point_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawPoint(bool)));
-    checkbox_point_->setChecked(true);
+    checkbox_dept_ = new QCheckBox(tr("Depth_Test"), this);
+    connect(checkbox_dept_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawPoint(bool)));
+    checkbox_dept_->setChecked(true);
 
-    checkbox_edge_ = new QCheckBox(tr("Cull_Face"), this);
-    connect(checkbox_edge_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawEdge(bool)));
-    checkbox_edge_->setChecked(true);
+    checkbox_cull_ = new QCheckBox(tr("Cull_Face"), this);
+    connect(checkbox_cull_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawEdge(bool)));
+    checkbox_cull_->setChecked(true);
 
     checkbox_face_ = new QCheckBox(tr("Face"), this);
     connect(checkbox_face_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawFace(bool)));
@@ -151,57 +150,55 @@ void MeshCompression::CreateRenderGroup()
     groupbox_render_ = new QGroupBox(tr("RUNUSE"), this);
 
     // Group Option
-    checkbox_lowpoly_ = new QCheckBox(tr("Low Poly"), this);
-    connect(checkbox_lowpoly_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLowPoly(bool)));
-    checkbox_show_result_ = new QCheckBox(tr("Show Result"), this);
-    connect(checkbox_show_result_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowResult(bool)));
-    checkbox_show_diff_ = new QCheckBox(tr("Show Difference"), this);
-    connect(checkbox_show_diff_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowDiff(bool)));
+    //checkbox_lowpoly_ = new QCheckBox(tr("Low Poly"), this);
+    //connect(checkbox_lowpoly_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLowPoly(bool)));
+    //checkbox_show_result_ = new QCheckBox(tr("Show Result"), this);
+    //connect(checkbox_show_result_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowResult(bool)));
+    //checkbox_show_diff_ = new QCheckBox(tr("Show Difference"), this);
+    //connect(checkbox_show_diff_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowDiff(bool)));
 
-    groupbox_option_ = new QGroupBox(tr("View"), this);
+    //groupbox_option_ = new QGroupBox(tr("View"), this);
 
     // Group Control
-    pushbutton_compress_ = new QPushButton(tr("Compress"), this);
-    connect(pushbutton_compress_, SIGNAL(clicked()), renderingwidget_, SLOT(Compress()));
+    pushbutton_compress_ = new QPushButton(tr("Apply"), this);
+    connect(pushbutton_compress_, SIGNAL(clicked()), this, SLOT(ControlLineEvent()));
 
-    lineedit_compress_precision_ = new QLineEdit(tr("100"), this);
-    connect(lineedit_compress_precision_, SIGNAL(textChanged(const QString&)),
-        renderingwidget_, SLOT(ChangePrecision(const QString&)));
+    lineedit_control_ = new QLineEdit(tr(""), this);
+    lineedit_control_->setMinimumWidth(300);
+    connect(lineedit_control_, SIGNAL(returnPressed()), this, SLOT(ControlLineEvent()));
+    connect(this, SIGNAL(SendCmdText(const QString &)), 
+        renderingwidget_, SLOT(ControlLineEvent(const QString &)));
 
     groupbox_control_ = new QGroupBox("Control", this);
 
     // Layout for Group Boxes
     QVBoxLayout* render_layout = new QVBoxLayout(groupbox_render_);
-    render_layout->addWidget(checkbox_point_);
-    render_layout->addWidget(checkbox_edge_);
+    render_layout->addWidget(checkbox_dept_);
+    render_layout->addWidget(checkbox_cull_);
     render_layout->addWidget(checkbox_face_);
     render_layout->addWidget(checkbox_texture_);
     render_layout->addWidget(checkbox_light_);
     render_layout->addWidget(checkbox_axes_);
 
-    QVBoxLayout* option_layout = new QVBoxLayout(groupbox_option_);
-    option_layout->addWidget(checkbox_lowpoly_);
-    option_layout->addWidget(checkbox_show_result_);
-    option_layout->addWidget(checkbox_show_diff_);
+    //QVBoxLayout* option_layout = new QVBoxLayout(groupbox_option_);
+    //option_layout->addWidget(checkbox_lowpoly_);
+    //option_layout->addWidget(checkbox_show_result_);
+    //option_layout->addWidget(checkbox_show_diff_);
 
     QVBoxLayout* control_layout = new QVBoxLayout(groupbox_control_);
+    control_layout->addWidget(lineedit_control_);
     control_layout->addWidget(pushbutton_compress_);
-    control_layout->addWidget(lineedit_compress_precision_);
-}
-
-void MeshCompression::keyPressEvent(QKeyEvent *e)
-{
-
-}
-
-void MeshCompression::keyReleaseEvent(QKeyEvent *e)
-{
-
 }
 
 void MeshCompression::ShowMeshInfo(int npoint, int nedge, int nface) const
 {
     label_meshinfo_->setText(QString("Mesh: p: %1 e: %2 f: %3\t").arg(npoint).arg(nedge).arg(nface));
+}
+
+void MeshCompression::ControlLineEvent()
+{
+    emit SendCmdText(this->lineedit_control_->text());
+    this->lineedit_control_->clear();
 }
 
 void MeshCompression::OpenFile() const

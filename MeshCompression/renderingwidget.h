@@ -7,7 +7,6 @@
 #include "CompressionSolution.h"
 #include "ConsoleMessageManager.h"
 #include "OpenGLCamera.h"
-#include <memory>
 #include "OpenGLMesh.h"
 #include "OpenGLScene.h"
 #include "SimulatorBase.h"
@@ -27,7 +26,7 @@ class RenderingWidget : public QOpenGLWidget, protected QOpenGLFunctions
 
 public:
 	RenderingWidget(QWidget *parent, MainWindow* mainwindow=0);
-	~RenderingWidget();
+    ~RenderingWidget();
 
 protected:
 	void initializeGL();
@@ -58,8 +57,7 @@ public slots:
 	void ReadScene();
 	void WriteMesh();
 	void LoadTexture();
-    void Compress();
-    void ChangePrecision(const QString &text);
+    void ControlLineEvent(const QString &);
 
 	void CheckDrawPoint(bool bv);
 	void CheckDrawEdge(bool bv);
@@ -72,18 +70,17 @@ public slots:
     void CheckShowDiff(bool bv);
     
 private:
-	void DrawAxes(bool bv);
-	void DrawPoints(bool);
-	void DrawEdge(bool);
-	void DrawFace(bool);
-	void DrawTexture(bool);
+	//void DrawAxes(bool bv);
+	//void DrawPoints(bool);
+	//void DrawEdge(bool);
+	//void DrawFace(bool);
+	//void DrawTexture(bool);
 
 private slots:
     void timerEvent();
 
 public:
 	MainWindow					*ptr_mainwindow_;
-	CArcBall					*ptr_arcball_;
     TriMesh                      mesh_;
 
 	// Texture

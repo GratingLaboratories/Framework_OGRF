@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "SimulatorBase.h"
 
-#include <QString>
-
 void SimulatorBase::init(const double& time)
 {
     init_time_ = last_time_ = time;
