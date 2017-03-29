@@ -11,6 +11,7 @@
 #include "CompressionSolution.h"
 
 #include "GlobalConfig.h"
+#include "SimulatorSimpleSpring_Midpoint.h"
 //#include "PsudoColorRGB.h"
 
 #define updateGL update
@@ -60,7 +61,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 	eye_direction_[0] = eye_direction_[1] = 0.0;
 	eye_direction_[2] = 1.0;
 
-    //msg.enable(TRIVIAL_MSG);
+    //msg.enable(TRIVIAL_MSG);                   
     msg.enable(BUFFER_INFO_MSG);
 
     init_time.start();
@@ -89,6 +90,8 @@ void RenderingWidget::initializeGL()
 
     QString vertexShaderFileName{ "shader/BasicPhongVertexShader.vertexshader" };
     QString fragmentShaderFileName{ "shader/BasicPhongFragmentShader.fragmentshader" };
+    /*QString vertexShaderFileName_Rigid{ "shader/PureColorVertexShader.vertexshader" };
+    QString fragmentShaderFileName_Rigid{ "shader/PureColorFragmentShader.fragmentshader" };*/
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
@@ -106,7 +109,12 @@ void RenderingWidget::initializeGL()
     shader_program_basic_phong_ = new QOpenGLShaderProgram(this);
     shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
     shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    shader_program_basic_phong_->link();
+    //shader_program_basic_phong_->link();
+
+    //shader_program_rigid_edge_ = new QOpenGLShaderProgram(this);
+    //shader_program_rigid_edge_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    //shader_program_rigid_edge_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
+
 
     vao = new QOpenGLVertexArrayObject();
     vao->create();
@@ -294,7 +302,7 @@ void RenderingWidget::timerEvent()
                 .arg("spring").arg(frame / SCREEN_SHOT_FRAME_STEP), "PNG");
             emit(operatorInfo(QString("Screen-Shot at frame %0").arg(frame / SCREEN_SHOT_FRAME_STEP)));
         }
-        sim->simulate(t + 0.0001f); // current time, in fact.
+        sim->simulate(t + 0.0002f); // current time, in fact.
         frame++;
     }
 
@@ -602,16 +610,9 @@ void RenderingWidget::ReadScene()
 
     scene.open(filename);
 
-    //sim = new SimulatorSimpleSpring(scene);
+    sim = new SimulatorSimpleSpring(scene);
     //sim = new SimulatorSimpleFED(scene);
-    //sim->init(0.0f);
-
-    //test = OpenGLMesh();
-    //test.file_name_ = filename;
-    //test.need_scale_ = true;
-    //test.need_centralize_ = true;
-    //test.scale_ = 1.0f;
-    //test.init();
+    sim->init(0.0f);
 
     frame = 0;
 	updateGL();

@@ -26,7 +26,6 @@ public:
     int n_vertices;
     int n_vertices_boundary;
     int n_faces;
-    //int n_faces_boundary;
     int n_tetras;
     std::vector<OpenMesh::Vec3f> point; // boundary vertices before internal ones.
     std::vector<std::array<int, 3>> face_vertices;

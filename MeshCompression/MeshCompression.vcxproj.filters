@@ -58,9 +58,6 @@
     <ClCompile Include="GeneratedFiles\Release\moc_renderingwidget.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="CompressionSolution.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PsudoColorRGB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -91,6 +88,9 @@
     <ClCompile Include="meshprogram.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SimulatorSimpleSpring_Midpoint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -103,9 +103,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="globalFunctions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CompressionSolution.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PsudoColorRGB.h">
@@ -136,6 +133,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlobalConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulatorSimpleSpring_Midpoint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -87,6 +87,7 @@ bool OpenGLScene::BuildFromJson()
         models_.push_back(std::make_shared<OpenGLMesh>());
         auto model = models_.back();
         model->name_ = model_jobj["Name"].toString();
+        map_name_tag_set_[model->name_] = QStringSet{};
         model->position_ = tran_arr_to_vec3(model_jobj["Position"].toArray());
         if (!model_jobj["Color"].isArray())
             model->color_ = OpenGLMesh::DEFAULT_COLOR;
@@ -100,6 +101,12 @@ bool OpenGLScene::BuildFromJson()
         model->file_location_ = file_location_;
         model->file_name_ = model_jobj["FileName"].toString();
         model->mesh_extension_ = model_jobj["MeshExtension"].toString();
+        // TODO
+        //if (model_jobj["Tag"].isArray())
+        //{
+        //    auto model_tags
+        //    map_name_tag_set_[model->name_].insert()
+        //}
 
         model->init();
         ref_mesh_from_name_[model->name_] = model;
@@ -150,6 +157,15 @@ std::shared_ptr<OpenGLMesh> OpenGLScene::get(const QString& model_name) const
     auto it = ref_mesh_from_name_.find(model_name);
     if (it != ref_mesh_from_name_.end())
         return it->second;
+    else
+        return nullptr;
+}
+
+std::shared_ptr<OpenGLMesh> OpenGLScene::get_by_tag(const QString& tag) const
+{
+    auto it = map_name_tag_set_.find(tag);
+    if (it != map_name_tag_set_.end())
+        return get(*it->second.cbegin());
     else
         return nullptr;
 }

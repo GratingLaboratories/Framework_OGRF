@@ -119,6 +119,7 @@ private:
     QTime                       init_time;
     QTimer                     *timer;
     QOpenGLShaderProgram       *shader_program_basic_phong_;
+    QOpenGLShaderProgram       *shader_program_rigid_edge_;
     QOpenGLBuffer              *vbo, *veo;
     QOpenGLVertexArrayObject   *vao;
     OpenGLCamera                camera_;

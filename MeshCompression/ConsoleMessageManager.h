@@ -20,6 +20,7 @@ public:
     }
     void enable(unsigned msg_code) { msg_mask |= msg_code; }
     void silent(unsigned msg_code) { msg_mask &= ~msg_code; }
+
     void log(const QString &s, unsigned msg_code = DEFAULT_MAG) const
     {
         if (msg_code & msg_mask)
@@ -42,6 +43,8 @@ public:
     {
         if (msg_code & msg_mask)
         {
+            for (int i = 0; i < indent_level; ++i)
+                out << '\t';
             out << s << std::endl;
         }
     }
@@ -49,6 +52,8 @@ public:
     {
         if (msg_code & msg_mask)
         {
+            for (int i = 0; i < indent_level; ++i)
+                out << '\t';
             out << s << std::endl;
         }
     }

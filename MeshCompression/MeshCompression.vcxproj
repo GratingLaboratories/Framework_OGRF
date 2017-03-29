@@ -78,7 +78,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CompressionSolution.cpp" />
     <ClCompile Include="ConsoleMessageManager.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_meshprogram.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -106,6 +105,7 @@
     <ClCompile Include="PsudoColorRGB.cpp" />
     <ClCompile Include="renderingwidget.cpp" />
     <ClCompile Include="SimulatorBase.cpp" />
+    <ClCompile Include="SimulatorSimpleSpring_Midpoint.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -113,7 +113,6 @@
     <ClCompile Include="TetrahedralizationSolution.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CompressionSolution.h" />
     <ClInclude Include="ConsoleMessageManager.h" />
     <ClInclude Include="GeneratedFiles\ui_meshcompression.h" />
     <ClInclude Include="GlobalConfig.h" />
@@ -121,6 +120,7 @@
     <ClInclude Include="HE_mesh\Vec.h" />
     <ClInclude Include="OpenMeshBasic.h" />
     <ClInclude Include="SimulatorBase.h" />
+    <ClInclude Include="SimulatorSimpleSpring_Midpoint.h" />
     <ClInclude Include="TetrahedralizationSolution.h" />
     <CustomBuild Include="renderingwidget.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>

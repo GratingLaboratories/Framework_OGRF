@@ -4,10 +4,14 @@
 void SimulatorBase::init(const double& time)
 {
     init_time_ = last_time_ = time;
+
+    init_ok_ = true;
 }
 
 void SimulatorBase::simulate(const double& time)
 {
+    if (!init_ok_)
+        return;
     curr_time_ = time;
     t = curr_time_ - init_time_;
     dt = curr_time_ - last_time_;
@@ -62,45 +66,57 @@ float _tetra_volume(Vector3f a, Vector3f b, Vector3f c, Vector3f d)
     return 1.0f / 6 * abs(v);
 }
 
-Vector3f qv_to_ev(const QVector3D &v)
+template <typename T1, typename T2>
+T2 vec_cast(const T1 &v)
 {
     return{ v[0], v[1], v[2] };
 }
 
-Vector3f ov_to_ev(const OpenMesh::Vec3f &v)
-{
-    return{ v[0], v[1], v[2] };
-}
-
-OpenMesh::Vec3f ev_to_ov(const Vector3f &v)
-{
-    return{ v[0], v[1], v[2] };
-}
-
-QVector3D ev_to_qv(const Vector3f &v)
-{
-    return{ v[0], v[1], v[2] };
-}
+//// some old vector cast functions.
+//Vector3f qv_to_ev(const QVector3D &v)
+//{
+//    return{ v[0], v[1], v[2] };
+//}
+//
+//Vector3f ov_to_ev(const OpenMesh::Vec3f &v)
+//{
+//    return{ v[0], v[1], v[2] };
+//}
+//
+//OpenMesh::Vec3f ev_to_ov(const Vector3f &v)
+//{
+//    return{ v[0], v[1], v[2] };
+//}
+//
+//QVector3D ev_to_qv(const Vector3f &v)
+//{
+//    return{ v[0], v[1], v[2] };
+//}
 
 void SimulatorSimpleSpring::init(const double& t)
 {
     SimulatorBase::init(t);
+
+    // Find a object called "Ball" in the scene.
     ball = scene_.get("Ball");
-    ground = scene_.get("Ground");
-    if (ball == nullptr || ground == nullptr)
+
+    if (ball == nullptr)
     {
         init_ok_ = false;
         return;
     }
+
     auto &tmesh = ball->tmesh();
+    // Clone original Tetra Mesh
     tmesh_originial = ball->tmesh().copy();
+
     velocity = std::vector<Vector3f>(tmesh.n_vertices, { 0,0,-10 });
     vert_volume = std::vector<float>(tmesh.n_vertices, 0.0f);
     tetra_volume = std::vector<float>(tmesh.n_tetras, 0.0f);
-    //position = std::vector<Vector3f>(tmesh.n_vertices, { 0,0,0 });
+
     for (int i = 0; i < tmesh.n_vertices; ++i)
     {
-        position.push_back(ov_to_ev(tmesh.point[i]));
+        position.push_back(vec_cast<OpenMesh::Vec3f, Eigen::Vector3f>(tmesh.point[i]));
     }
     position_original = position;
 
@@ -115,14 +131,12 @@ void SimulatorSimpleSpring::init(const double& t)
         for (int j = 0; j < 4; ++j)
             vert_volume[tvs[j]] += tetra_volume[i] * 0.25f;
     }
-
-    init_ok_ = true;
 }
 
 void SimulatorSimpleSpring::simulate_util()
 {
     const float density = 1000.0f; // \ro: 1000 kg/m^3, water like.
-    const Vector3f g{ 0.0f, 0.0f, -9.8f }; // g: jyokure kassodoku.
+    const Vector3f g{ 0.0f, 0.0f, -9.8f }; // g: jyokuryo kassodoku.
     const float k = 200000.0f; // k;
     const float mu = 0.03f; // mu;
     auto &tmesh = ball->tmesh();
@@ -179,18 +193,10 @@ void SimulatorSimpleSpring::simulate_util()
     // Balance
     for (int vi = 0; vi < tmesh.n_vertices; ++vi)
     {
-        if (position[vi][2] <= 0.0f && position[vi][1] <= 0.25f / 0.33f)
+        // if (position[vi][2] <= 0.0f && position[vi][1] <= 0.25f / 0.33f)
+        if (position[vi][2] <= 0.0f)
         {
-            //force[vi][2] = 0;
-            //if (velocity[vi][2] < 0.0f)
-            //{
-            //    velocity[vi][2] = -velocity[vi][2];
-            //    //position[vi][2] = -position[vi][2];
-            //}
             force[vi][2] += -position[vi][2] * k * 10.0f;
-
-            //force[vi][0] += -position[vi][2] * k * mu * -velocity[vi][0];
-           // force[vi][1] += -position[vi][2] * k * mu * -velocity[vi][1];
         }
     }
     // Calm
@@ -216,20 +222,20 @@ void SimulatorSimpleSpring::simulate_rebuild()
     {
         if (vi < tmesh.n_vertices_boundary)
         {
-            ball->set_point(vi, ev_to_qv(position[vi]));
+            ball->set_point(vi, vec_cast<Vector3f, QVector3D>(position[vi]));
+            //ball->set_point(vi, ev_to_qv(position[vi]));
         }
-        tmesh.point[vi] = ev_to_ov(position[vi]);
+        tmesh.point[vi] = vec_cast<Eigen::Vector3f, OpenMesh::Vec3f>(position[vi]);
     }
     ball->update();
+    //position_original = position;
 }
 
-
-
-
-
-
-
-
+/*
+ *
+ *
+ *
+ */
 void SimulatorSimpleFED::init(const double& t)
 {
     SimulatorBase::init(t);
@@ -247,7 +253,7 @@ void SimulatorSimpleFED::init(const double& t)
     //position = std::vector<Vector3f>(tmesh.n_vertices, { 0,0,0 });
     for (int i = 0; i < tmesh.n_vertices; ++i)
     {
-        position.push_back(ov_to_ev(tmesh.point[i]));
+        position.push_back(vec_cast<OpenMesh::Vec3f, Eigen::Vector3f>(tmesh.point[i]));
     }
     for (int i = 0; i < tmesh.n_tetras; ++i)
     {
@@ -380,9 +386,9 @@ void SimulatorSimpleFED::simulate_rebuild()
     {
         if (vi < tmesh.n_vertices_boundary)
         {
-            ball->set_point(vi, ev_to_qv(position[vi]));
+            ball->set_point(vi, vec_cast<Eigen::Vector3f, QVector3D>(position[vi]));
         }
-        tmesh.point[vi] = ev_to_ov(position[vi]);
+        tmesh.point[vi] = vec_cast<Eigen::Vector3f, OpenMesh::Vec3f>(position[vi]);
     }
     ball->update();
 }

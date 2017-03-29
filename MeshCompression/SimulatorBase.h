@@ -49,7 +49,6 @@ protected:
     std::vector<Vector3f> position_original;
     std::vector<float> tetra_volume;
     std::vector<float> vert_volume;
-    //std::vector<Matrix3f> X_bar;
     TetraMesh tmesh_originial;
 };
 
