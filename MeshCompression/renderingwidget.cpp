@@ -607,9 +607,12 @@ void RenderingWidget::ReadScene()
 
     scene.open(filename);
 
-    sim = new SimulatorSimpleSpring(scene);
-    //sim = new SimulatorSimpleFED(scene);
-    sim->init(0.0f);
+    /// BRANCH: DEV_SKELETON
+    /// DO NOT MERGE THIS CHANGE
+    /// DISABLED SIM PART.
+    //sim = new SimulatorSimpleSpring(scene);
+    ////sim = new SimulatorSimpleFED(scene);
+    //sim->init(0.0f);
 
     frame = 0;
 	updateGL();
