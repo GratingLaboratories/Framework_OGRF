@@ -5,10 +5,7 @@
 #include <QFileDialog>
 #include <iostream>
 #include <QTextCodec>
-#include "ArcBall.h"
 #include "globalFunctions.h"
-#include "HE_mesh/Vec.h"
-#include "CompressionSolution.h"
 
 #include "GlobalConfig.h"
 #include "SimulatorSimpleSpring_Midpoint.h"
@@ -25,7 +22,7 @@
 
 #define INF                     9.9e9f
 
-typedef trimesh::vec3  Vec3f;
+typedef QVector3D  Vec3f;
 using Vec3f_om = OpenMesh::Vec3f;
 
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :

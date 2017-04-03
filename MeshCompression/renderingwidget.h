@@ -3,16 +3,14 @@
 
 #include <QOpenGLWidget>
 
-#include "HE_mesh/Vec.h"
-#include "CompressionSolution.h"
+#include <QVector3D>
 #include "ConsoleMessageManager.h"
 #include "OpenGLCamera.h"
 #include "OpenGLMesh.h"
 #include "OpenGLScene.h"
 #include "SimulatorBase.h"
 
-using trimesh::vec;
-using trimesh::point;
+using vec = QVector3D;
 
 typedef OpenMesh::TriMesh_ArrayKernelT<>  TriMesh;
 
@@ -89,7 +87,7 @@ public:
 
 	// eye
 	GLfloat						eye_distance_;
-	point						eye_goal_;
+    vec						eye_goal_;
 	vec							eye_direction_;
 	QPoint						current_position_;
 
@@ -107,8 +105,6 @@ public:
 private:
     QColor                      background_color_;
     int                         precision_;
-    PositionMap                 position_map_;
-    DifferenceMap               difference_map_;
     float                       max_difference_;
     bool                        compress_ok_;
     ConsoleMessageManager       msg;
