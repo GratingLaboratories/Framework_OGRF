@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
-#include "ui_meshcompression.h"
 
 class QLabel;
 class QPushButton;
@@ -23,12 +22,16 @@ private:
     void CreateStatusBar();
     void CreateRenderGroup();
 
-protected:
-    void keyPressEvent(QKeyEvent *e);
-    void keyReleaseEvent(QKeyEvent *e);
+//protected:
+//    void keyPressEvent(QKeyEvent *e);
+//    void keyReleaseEvent(QKeyEvent *e);
 
-    public slots:
+signals:
+    void SendCmdText(const QString &);
+
+public slots:
     void ShowMeshInfo(int npoint, int nedge, int nface) const;
+    void ControlLineEvent();
     void OpenFile() const;
     void ShowAbout();
 
@@ -58,8 +61,8 @@ private:
     QAction                         *action_param_;
 
     // Render CheckBoxs
-    QCheckBox						*checkbox_point_;
-    QCheckBox						*checkbox_edge_;
+    QCheckBox						*checkbox_dept_;
+    QCheckBox						*checkbox_cull_;
     QCheckBox						*checkbox_face_;
     QCheckBox						*checkbox_light_;
     QCheckBox						*checkbox_texture_;
@@ -72,7 +75,7 @@ private:
 
     // Control
     QPushButton                     *pushbutton_compress_;
-    QLineEdit                       *lineedit_compress_precision_; 
+    QLineEdit                       *lineedit_control_; 
 
     QGroupBox						*groupbox_render_;
     QGroupBox						*groupbox_option_;

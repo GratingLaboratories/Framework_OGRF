@@ -3,11 +3,14 @@
 
 #include <QOpenGLWidget>
 
-#include "HE_mesh/Vec.h"
-#include "CompressionSolution.h"
+#include <QVector3D>
+#include "ConsoleMessageManager.h"
+#include "OpenGLCamera.h"
+#include "OpenGLMesh.h"
+#include "OpenGLScene.h"
+#include "SimulatorBase.h"
 
-using trimesh::vec;
-using trimesh::point;
+using vec = QVector3D;
 
 typedef OpenMesh::TriMesh_ArrayKernelT<>  TriMesh;
 
@@ -15,19 +18,18 @@ class MainWindow;
 class CArcBall;
 class Mesh3D;
 
-class RenderingWidget : public QOpenGLWidget
+class RenderingWidget : public QOpenGLWidget, protected QOpenGLFunctions
 {
 	Q_OBJECT
 
 public:
 	RenderingWidget(QWidget *parent, MainWindow* mainwindow=0);
-	~RenderingWidget();
+    ~RenderingWidget();
 
 protected:
 	void initializeGL();
 	void resizeGL(int w, int h);
 	void paintGL();
-	void timerEvent(QTimerEvent *e);
 
 	// mouse events
 	void mousePressEvent(QMouseEvent *e);
@@ -50,11 +52,10 @@ private:
 
 public slots:
 	void SetBackground();
-	void ReadMesh();
+	void ReadScene();
 	void WriteMesh();
 	void LoadTexture();
-    void Compress();
-    void ChangePrecision(const QString &text);
+    void ControlLineEvent(const QString &);
 
 	void CheckDrawPoint(bool bv);
 	void CheckDrawEdge(bool bv);
@@ -67,15 +68,17 @@ public slots:
     void CheckShowDiff(bool bv);
     
 private:
-	void DrawAxes(bool bv);
-	void DrawPoints(bool);
-	void DrawEdge(bool);
-	void DrawFace(bool);
-	void DrawTexture(bool);
+	//void DrawAxes(bool bv);
+	//void DrawPoints(bool);
+	//void DrawEdge(bool);
+	//void DrawFace(bool);
+	//void DrawTexture(bool);
+
+private slots:
+    void timerEvent();
 
 public:
 	MainWindow					*ptr_mainwindow_;
-	CArcBall					*ptr_arcball_;
     TriMesh                      mesh_;
 
 	// Texture
@@ -84,7 +87,7 @@ public:
 
 	// eye
 	GLfloat						eye_distance_;
-	point						eye_goal_;
+    vec						eye_goal_;
 	vec							eye_direction_;
 	QPoint						current_position_;
 
@@ -102,10 +105,25 @@ public:
 private:
     QColor                      background_color_;
     int                         precision_;
-    PositionMap                 position_map_;
-    DifferenceMap               difference_map_;
     float                       max_difference_;
     bool                        compress_ok_;
+    ConsoleMessageManager       msg;
+
+    int                         frame_rate_limit;
+    float                       fps;
+    QTime                       last_time;
+    QTime                       init_time;
+    QTimer                     *timer;
+    QOpenGLShaderProgram       *shader_program_basic_phong_;
+    QOpenGLShaderProgram       *shader_program_rigid_edge_;
+    QOpenGLBuffer              *vbo, *veo;
+    QOpenGLVertexArrayObject   *vao;
+    OpenGLCamera                camera_;
+    OpenGLMesh                  test;
+    OpenGLScene                 scene;
+    bool                        light_dir_fix_;
+    int                         frame;
+    SimulatorBase              *sim;
 };
 
 #endif // RENDERINGWIDGET_H

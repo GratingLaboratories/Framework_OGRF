@@ -10,7 +10,7 @@
 //#define  _USE_MATH_DEFINES 
 #include <stdlib.h>
 #include <stdio.h>
-#include <gl/glut.h>
+//#include <gl/glut.h>
 
 // Before these files can be included, 
 // the files should be in the list of 'VC++ Include Directory',

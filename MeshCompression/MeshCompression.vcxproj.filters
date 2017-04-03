@@ -46,20 +46,8 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="meshcompression.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_meshcompression.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_meshcompression.cpp">
-      <Filter>Generated Files\Release</Filter>
-    </ClCompile>
     <ClCompile Include="GeneratedFiles\qrc_meshcompression.cpp">
       <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ArcBall.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="renderingwidget.cpp">
       <Filter>Source Files</Filter>
@@ -70,10 +58,37 @@
     <ClCompile Include="GeneratedFiles\Release\moc_renderingwidget.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="CompressionSolution.cpp">
+    <ClCompile Include="PsudoColorRGB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PsudoColorRGB.cpp">
+    <ClCompile Include="ConsoleMessageManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGLCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGLMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGLScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="TetrahedralizationSolution.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulatorBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_meshprogram.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_meshprogram.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="meshprogram.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SimulatorSimpleSpring_Midpoint.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -84,26 +99,47 @@
     <ClInclude Include="GeneratedFiles\ui_meshcompression.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="ArcBall.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HE_mesh\Vec.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="globalFunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CompressionSolution.h">
+    <ClInclude Include="PsudoColorRGB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PsudoColorRGB.h">
+    <ClInclude Include="ConsoleMessageManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGLCamera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGLMesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenGLScene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="QJson.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TetrahedralizationSolution.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OpenMeshBasic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulatorBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimulatorSimpleSpring_Midpoint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="meshcompression.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
     <CustomBuild Include="meshcompression.ui">
       <Filter>Form Files</Filter>
     </CustomBuild>
@@ -111,6 +147,9 @@
       <Filter>Resource Files</Filter>
     </CustomBuild>
     <CustomBuild Include="renderingwidget.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="meshprogram.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
   </ItemGroup>
