@@ -3,10 +3,11 @@
 #include "renderingwidget.h"
 #include "meshprogram.h"
 
-MeshCompression::MeshCompression(QWidget *parent)
+MeshProgram::MeshProgram(QWidget *parent)
     : QMainWindow(parent)
 {
     renderingwidget_ = new RenderingWidget(this);
+    connect(this, SIGNAL(SendSliceConfig(const SliceConfig &)), renderingwidget_, SLOT(SliceConfigChanged(const SliceConfig &)));
     //renderingwidget_->grabKeyboard();
     setCentralWidget(new QWidget);
 
@@ -26,8 +27,10 @@ MeshCompression::MeshCompression(QWidget *parent)
     QVBoxLayout *layout_left = new QVBoxLayout;
     layout_left->addWidget(groupbox_render_);
     layout_left->addStretch(1);
-    //layout_left->addWidget(groupbox_option_);    
+    //layout_left->addWidget(groupbox_option_);
     //layout_left->addStretch(1);
+    layout_left->addWidget(groupbox_slice_);
+    layout_left->addStretch(1);
     layout_left->addWidget(groupbox_control_);
     layout_left->addStretch(2);
 
@@ -44,7 +47,7 @@ MeshCompression::MeshCompression(QWidget *parent)
     toolbar_file_->setVisible(false);
 }
 
-void MeshCompression::CreateActions()
+void MeshProgram::CreateActions()
 {
     action_new_ = new QAction(QIcon(":/MeshCompression/Resources/images/new.png"), tr("&New"), this);
     action_new_->setShortcut(QKeySequence::New);
@@ -79,9 +82,19 @@ void MeshCompression::CreateActions()
     connect(action_background_, SIGNAL(triggered()), renderingwidget_, SLOT(SetBackground()));
     //connect(action_convert_, SIGNAL(triggered()), renderingwidget_, SLOT(Convert()));
     //connect(action_param_, SIGNAL(triggered()), renderingwidget_, SLOT(Param()));
+
+    /// SKELETON BRANCH
+    /// NO NEED TO MERGE THESE CHANGE
+    action_open_mesh = new QAction(tr("[&Open one mesh]"), this);
+    connect(action_open_mesh, SIGNAL(triggered()), renderingwidget_, SLOT(OpenOneMesh()));
+
+    action_get_skeleton = new QAction(tr("[&Skeleton]"));
+    connect(action_get_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Skeleton()));
+
+    // action_open_clear;
 }
 
-void MeshCompression::CreateMenus()
+void MeshProgram::CreateMenus()
 {
     //menu_file_ = menuBar()->addMenu(tr("&File"));
     //menu_file_->setStatusTip(tr("File menu"));
@@ -91,7 +104,7 @@ void MeshCompression::CreateMenus()
     //menu_file_->addAction(action_saveas_);
 }
 
-void MeshCompression::CreateToolBars()
+void MeshProgram::CreateToolBars()
 {
     toolbar_file_ = addToolBar(tr("File"));
     toolbar_file_->addAction(action_new_);
@@ -102,11 +115,13 @@ void MeshCompression::CreateToolBars()
     toolbar_basic_->addAction(action_loadmesh_);
     //toolbar_basic_->addAction(action_loadtexture_);
     toolbar_basic_->addAction(action_background_);
+    toolbar_basic_->addAction(action_open_mesh);
+    toolbar_basic_->addAction(action_get_skeleton);
     //toolbar_basic_->addAction(action_convert_);
     //toolbar_basic_->addAction(action_param_);
 }
 
-void MeshCompression::CreateStatusBar()
+void MeshProgram::CreateStatusBar()
 {
     label_meshinfo_ = new QLabel(QString("Mesh: p: %1 e: %2 f: %3\t").arg(0).arg(0).arg(0));
     label_meshinfo_->setAlignment(Qt::AlignCenter);
@@ -123,7 +138,7 @@ void MeshCompression::CreateStatusBar()
     connect(renderingwidget_, SIGNAL(operatorInfo(QString)), label_operatorinfo_, SLOT(setText(QString)));
 }
 
-void MeshCompression::CreateRenderGroup()
+void MeshProgram::CreateRenderGroup()
 {
     // Group Render
     checkbox_dept_ = new QCheckBox(tr("Depth_Test"), this);
@@ -147,7 +162,7 @@ void MeshCompression::CreateRenderGroup()
     checkbox_axes_ = new QCheckBox(tr("AUNUSE"), this);
     connect(checkbox_axes_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawAxes(bool)));
 
-    groupbox_render_ = new QGroupBox(tr("RUNUSE"), this);
+    groupbox_render_ = new QGroupBox(tr("Render"), this);
 
     // Group Option
     //checkbox_lowpoly_ = new QCheckBox(tr("Low Poly"), this);
@@ -166,10 +181,33 @@ void MeshCompression::CreateRenderGroup()
     lineedit_control_ = new QLineEdit(tr(""), this);
     lineedit_control_->setMinimumWidth(300);
     connect(lineedit_control_, SIGNAL(returnPressed()), this, SLOT(ControlLineEvent()));
-    connect(this, SIGNAL(SendCmdText(const QString &)), 
+    connect(this, SIGNAL(SendCmdText(const QString &)),
         renderingwidget_, SLOT(ControlLineEvent(const QString &)));
 
     groupbox_control_ = new QGroupBox("Control", this);
+
+    // Group Slice
+    checkbox_Xrev_ = new QCheckBox(tr("rX"), this);
+    connect(checkbox_Xrev_, SIGNAL(clicked(bool)), this, SLOT(SliceCheckboxEvent(bool)));
+    checkbox_Yrev_ = new QCheckBox(tr("rY"), this);
+    connect(checkbox_Yrev_, SIGNAL(clicked(bool)), this, SLOT(SliceCheckboxEvent(bool)));
+    checkbox_Zrev_ = new QCheckBox(tr("rZ"), this);
+    connect(checkbox_Zrev_, SIGNAL(clicked(bool)), this, SLOT(SliceCheckboxEvent(bool)));
+    slider_X = new QSlider(Qt::Orientation::Horizontal);
+    slider_X->setMaximum(100);
+    slider_X->setMinimum(0);
+    connect(slider_X, SIGNAL(valueChanged(int)), this, SLOT(SliceSliderEvent(int)));
+    slider_Y = new QSlider(Qt::Orientation::Horizontal);
+    slider_Y->setMaximum(100);
+    slider_Y->setMinimum(0);
+    connect(slider_Y, SIGNAL(valueChanged(int)), this, SLOT(SliceSliderEvent(int)));
+    slider_Z = new QSlider(Qt::Orientation::Horizontal);
+    slider_Z->setMaximum(100);
+    slider_Z->setMinimum(0);
+    connect(slider_Z, SIGNAL(valueChanged(int)), this, SLOT(SliceSliderEvent(int)));
+
+    groupbox_slice_ = new QGroupBox("Slice", this);
+
 
     // Layout for Group Boxes
     QVBoxLayout* render_layout = new QVBoxLayout(groupbox_render_);
@@ -188,25 +226,53 @@ void MeshCompression::CreateRenderGroup()
     QVBoxLayout* control_layout = new QVBoxLayout(groupbox_control_);
     control_layout->addWidget(lineedit_control_);
     control_layout->addWidget(pushbutton_compress_);
+
+    QGridLayout* slice_layout = new QGridLayout;
+    slice_layout->addWidget(checkbox_Xrev_, 0, 0);
+    slice_layout->addWidget(checkbox_Yrev_, 1, 0);
+    slice_layout->addWidget(checkbox_Zrev_, 2, 0);
+    slice_layout->addWidget(slider_X, 0, 1);
+    slice_layout->addWidget(slider_Y, 1, 1);
+    slice_layout->addWidget(slider_Z, 2, 1);
+    groupbox_slice_->setLayout(slice_layout);
 }
 
-void MeshCompression::ShowMeshInfo(int npoint, int nedge, int nface) const
+void MeshProgram::ShowMeshInfo(int npoint, int nedge, int nface) const
 {
     label_meshinfo_->setText(QString("Mesh: p: %1 e: %2 f: %3\t").arg(npoint).arg(nedge).arg(nface));
 }
 
-void MeshCompression::ControlLineEvent()
+void MeshProgram::ControlLineEvent()
 {
     emit SendCmdText(this->lineedit_control_->text());
     this->lineedit_control_->clear();
 }
 
-void MeshCompression::OpenFile() const
+void MeshProgram::SliceCheckboxEvent(bool)
+{
+    slice_config_.revX = this->checkbox_Xrev_->isChecked();
+    slice_config_.revY = this->checkbox_Yrev_->isChecked();
+    slice_config_.revZ = this->checkbox_Zrev_->isChecked();
+    SendSliceConfig(slice_config_);
+}
+
+void MeshProgram::SliceSliderEvent(int)
+{
+    slice_config_.sliceX = static_cast<float>(this->slider_X->value()) /
+        (slider_X->maximum() - slider_X->minimum());
+    slice_config_.sliceY = static_cast<float>(this->slider_Y->value()) /
+        (slider_Y->maximum() - slider_Y->minimum());
+    slice_config_.sliceZ = static_cast<float>(this->slider_Z->value()) /
+        (slider_Z->maximum() - slider_Z->minimum());
+    SendSliceConfig(slice_config_);
+}
+
+void MeshProgram::OpenFile() const
 {
 
 }
 
-void MeshCompression::ShowAbout()
+void MeshProgram::ShowAbout()
 {
     QMessageBox::information(this, "About QtMeshFrame-1.0.1",
 

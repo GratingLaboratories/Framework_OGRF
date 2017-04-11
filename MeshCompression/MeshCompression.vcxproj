@@ -106,6 +106,7 @@
     <ClCompile Include="renderingwidget.cpp" />
     <ClCompile Include="SimulatorBase.cpp" />
     <ClCompile Include="SimulatorSimpleSpring_Midpoint.cpp" />
+    <ClCompile Include="SkeletonSolution.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -121,6 +122,8 @@
     <ClInclude Include="OpenMeshBasic.h" />
     <ClInclude Include="SimulatorBase.h" />
     <ClInclude Include="SimulatorSimpleSpring_Midpoint.h" />
+    <ClInclude Include="SkeletonSolution.h" />
+    <ClInclude Include="SliceConfig.h" />
     <ClInclude Include="TetrahedralizationSolution.h" />
     <CustomBuild Include="renderingwidget.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>

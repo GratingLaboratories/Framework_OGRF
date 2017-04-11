@@ -816,6 +816,47 @@ void RenderingWidget::CheckShowDiff(bool bv)
     updateGL();
 }
 
+void RenderingWidget::OpenOneMesh()
+{
+    QString filename = QFileDialog::
+        getOpenFileName(this, tr("Read Mesh"),
+            "./mesh", tr("Mesh Files (*.obj)"));
+
+    if (filename.isEmpty())
+    {
+        emit(operatorInfo(QString("Read Mesh Failed!")));
+        return;
+    }
+
+    // 中文路径支持
+    QTextCodec *code = QTextCodec::codecForName("gd18030");
+    QTextCodec::setCodecForLocale(code);
+    QByteArray byfilename = filename.toLocal8Bit();
+
+    scene.clear();
+    scene.open_by_obj(filename);
+
+    frame = 0;
+    updateGL();
+}
+
+void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
+{
+    this->slice_config_ = config;
+    scene.slice(config);
+    updateGL();
+}
+
+void RenderingWidget::Skeleton()
+{
+    if (scene.model_number() == 0)
+        return;
+
+    auto mesh_clone = *scene.get("Main");
+    updateGL();
+}
+
+
 //void RenderingWidget::DrawAxes(bool bV)
 //{
 ////	if (!bV)

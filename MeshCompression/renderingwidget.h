@@ -9,6 +9,8 @@
 #include "OpenGLMesh.h"
 #include "OpenGLScene.h"
 #include "SimulatorBase.h"
+#include "meshprogram.h"
+#include "SliceConfig.h"
 
 using vec = QVector3D;
 
@@ -66,6 +68,10 @@ public slots:
     void CheckLowPoly(bool bv);
     void CheckShowResult(bool bv);
     void CheckShowDiff(bool bv);
+
+    void Skeleton();
+    void OpenOneMesh();
+    void SliceConfigChanged(const SliceConfig &config);
     
 private:
 	//void DrawAxes(bool bv);
@@ -124,6 +130,8 @@ private:
     bool                        light_dir_fix_;
     int                         frame;
     SimulatorBase              *sim;
+
+    SliceConfig                 slice_config_;
 };
 
 #endif // RENDERINGWIDGET_H
