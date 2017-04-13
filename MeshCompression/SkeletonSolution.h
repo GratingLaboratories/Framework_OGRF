@@ -5,6 +5,7 @@
 #include <vector>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
+#include <engine.h>
 
 using Vector3f = Eigen::Vector3f;
 using std::vector;
@@ -35,5 +36,7 @@ private:
     vector<vector<int>>     neighbors;
 
     float _cotangent_for_angle_AOB(int, int, int);
+    void Basic_Prepare_and_Calculate_Laplacian(vector<T>& tv_Lap);
+    static void Input_Laplacian_to_Engine(const vector<T> &tv_Lap, Engine* ep);
 };
 
