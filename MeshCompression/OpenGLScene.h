@@ -18,6 +18,7 @@ public:
     void clear();
     bool open(const QString &name);
     bool open_by_obj(const QString &name);
+    void add_model(OpenGLMesh &mesh);
     bool changed();
     int  model_number() const { return models_.size(); }
     void slice(const SliceConfig &slice_config);// { slice_config_ = slice_config; }

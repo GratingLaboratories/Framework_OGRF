@@ -9,6 +9,7 @@
 
 #include "GlobalConfig.h"
 #include "SimulatorSimpleSpring_Midpoint.h"
+#include "SkeletonSolution.h"
 //#include "PsudoColorRGB.h"
 
 #define updateGL update
@@ -853,6 +854,10 @@ void RenderingWidget::Skeleton()
         return;
 
     auto mesh_clone = *scene.get("Main");
+    SkeletonSolution ss(mesh_clone.mesh(), msg);
+    ss.skeletonize();
+    mesh_clone.color_ = { 1.0f, 0.0f, 0.0f };
+    scene.add_model(mesh_clone);
     updateGL();
 }
 

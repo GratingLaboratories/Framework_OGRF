@@ -85,6 +85,14 @@ bool OpenGLScene::open_by_obj(const QString& name)
     return true;
 }
 
+void OpenGLScene::add_model(OpenGLMesh& mesh)
+{
+    models_.push_back(std::make_shared<OpenGLMesh>());
+    auto &model = *models_.back();
+    model = mesh;
+    model.update();
+}
+
 OpenGLScene::~OpenGLScene()
 {
 }
@@ -131,12 +139,7 @@ bool OpenGLScene::BuildFromJson()
         model->file_location_ = file_location_;
         model->file_name_ = model_jobj["FileName"].toString();
         model->mesh_extension_ = model_jobj["MeshExtension"].toString();
-        // TODO
-        //if (model_jobj["Tag"].isArray())
-        //{
-        //    auto model_tags
-        //    map_name_tag_set_[model->name_].insert()
-        //}
+        // TODO tags
 
         model->init();
         ref_mesh_from_name_[model->name_] = model;
