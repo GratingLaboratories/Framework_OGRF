@@ -1,4 +1,5 @@
 #include "stdafx.h"
+
 #include "OpenGLScene.h"
 
 void OpenGLScene::clear()
@@ -55,6 +56,43 @@ bool OpenGLScene::open(const QString& name)
     }
 }
 
+bool OpenGLScene::open_by_obj(const QString& name)
+{
+    msg_.reset_indent();
+    msg_.log("Read OBJ from file ", name, INFO_MSG);
+
+    models_.push_back(std::make_shared<OpenGLMesh>());
+    auto model = models_.back();
+    model->name_ = "Main";
+    //map_name_tag_set_[model->name_] = QStringSet{};
+    model->position_ = { 0.0, 0.0 ,0.0 };
+    model->color_ = { 1.0, 1.0 ,1.0 };
+    model->need_scale_ = true;
+    model->scale_ = 1.0;
+    model->need_centralize_ = true;
+    model->use_face_normal_ = false;
+    model->show_tetra_ = false;
+    model->file_location_ = "";
+    model->file_name_ = name;
+    model->mesh_extension_ = "";
+    model->slice(slice_config_);
+
+    model->init();
+    ref_mesh_from_name_[model->name_] = model;
+
+    msg_.log("Read Complete.", INFO_MSG);
+
+    return true;
+}
+
+void OpenGLScene::add_model(OpenGLMesh& mesh)
+{
+    models_.push_back(std::make_shared<OpenGLMesh>());
+    auto &model = *models_.back();
+    model = mesh;
+    model.update();
+}
+
 OpenGLScene::~OpenGLScene()
 {
 }
@@ -96,17 +134,12 @@ bool OpenGLScene::BuildFromJson()
         model->need_scale_ = model_jobj["NeedScale"].toBool();
         model->need_centralize_ = model_jobj["NeedCentralize"].toBool();
         model->use_face_normal_ = model_jobj["UseFaceNormal"].toBool();
-        model->show_tetra_ = model_jobj["ShowTetra"].toBool();
+        model->show_tetra_ = model_jobj["ShowTetra"].toBool() & NEED_TETRA;
         model->scale_ = model_jobj["Scale"].toDouble();
         model->file_location_ = file_location_;
         model->file_name_ = model_jobj["FileName"].toString();
         model->mesh_extension_ = model_jobj["MeshExtension"].toString();
-        // TODO
-        //if (model_jobj["Tag"].isArray())
-        //{
-        //    auto model_tags
-        //    map_name_tag_set_[model->name_].insert()
-        //}
+        // TODO tags
 
         model->init();
         ref_mesh_from_name_[model->name_] = model;
@@ -150,6 +183,15 @@ bool OpenGLScene::changed()
     if (changed)
         update();
     return changed;
+}
+
+void OpenGLScene::slice(const SliceConfig& slice_config)
+{
+    this->slice_config_ = slice_config;
+    // TODO 
+    // current: slice only the first mesh in the scene.
+    if (!models_.empty())
+        models_[0]->slice(slice_config);
 }
 
 std::shared_ptr<OpenGLMesh> OpenGLScene::get(const QString& model_name) const

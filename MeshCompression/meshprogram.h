@@ -1,19 +1,19 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
-
+#include "SliceConfig.h"
 class QLabel;
 class QPushButton;
 class QCheckBox;
 class QGroupBox;
 class RenderingWidget;
 
-class MeshCompression : public QMainWindow
+class MeshProgram : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MeshCompression(QWidget *parent = Q_NULLPTR);
+    MeshProgram(QWidget *parent = Q_NULLPTR);
 
 private:
     void CreateActions();
@@ -22,21 +22,19 @@ private:
     void CreateStatusBar();
     void CreateRenderGroup();
 
-//protected:
-//    void keyPressEvent(QKeyEvent *e);
-//    void keyReleaseEvent(QKeyEvent *e);
-
 signals:
     void SendCmdText(const QString &);
+    void SendSliceConfig(const SliceConfig &config);
 
 public slots:
     void ShowMeshInfo(int npoint, int nedge, int nface) const;
     void ControlLineEvent();
+    void SliceCheckboxEvent(bool);
+    void SliceSliderEvent(int);
     void OpenFile() const;
     void ShowAbout();
 
 private:
-
     // Basic
     QMenu							*menu_file_;
     QMenu							*menu_edit_;
@@ -60,6 +58,12 @@ private:
     QAction                         *action_convert_;
     QAction                         *action_param_;
 
+    /// SKELETON BRANCH
+    /// NO NEED TO MERGE THESE CHANGE
+    QAction                         *action_open_mesh;
+    QAction                         *action_get_skeleton;
+    QAction                         *action_open_clear;
+
     // Render CheckBoxs
     QCheckBox						*checkbox_dept_;
     QCheckBox						*checkbox_cull_;
@@ -80,6 +84,16 @@ private:
     QGroupBox						*groupbox_render_;
     QGroupBox						*groupbox_option_;
     QGroupBox                       *groupbox_control_;
+
+    // Slice Group
+    QGroupBox                       *groupbox_slice_;
+    QCheckBox						*checkbox_Xrev_;
+    QCheckBox						*checkbox_Yrev_;
+    QCheckBox						*checkbox_Zrev_;
+    QSlider                         *slider_X;
+    QSlider                         *slider_Y;
+    QSlider                         *slider_Z;
+    SliceConfig                     slice_config_;
 
     // Information
     QLabel							*label_meshinfo_;

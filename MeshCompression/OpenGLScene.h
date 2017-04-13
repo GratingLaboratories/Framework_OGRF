@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <memory>
+#include "SliceConfig.h"
 
 class OpenGLScene
 {
@@ -16,7 +17,11 @@ public:
     OpenGLScene(ConsoleMessageManager &msg) : msg_(msg) {  }
     void clear();
     bool open(const QString &name);
+    bool open_by_obj(const QString &name);
+    void add_model(OpenGLMesh &mesh);
     bool changed();
+    int  model_number() const { return models_.size(); }
+    void slice(const SliceConfig &slice_config);// { slice_config_ = slice_config; }
     std::shared_ptr<OpenGLMesh> get(const QString &model_name) const;
     std::shared_ptr<OpenGLMesh> get_by_tag(const QString &tag) const;
 
@@ -39,5 +44,6 @@ private:
 
     std::vector<std::shared_ptr<OpenGLMesh>> models_;
     std::map<QString, std::shared_ptr<OpenGLMesh>> ref_mesh_from_name_;
+    SliceConfig slice_config_;
 };
 

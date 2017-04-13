@@ -1,10 +1,12 @@
 #include "stdafx.h"
 #include "OpenGLMesh.h"
-#include <sstream>
+#include "OpenGLScene.h"
 
 using OpenMesh::Vec3f;
 
 const QVector3D OpenGLMesh::DEFAULT_COLOR{42.f, 42.f, 42.f};
+
+#define _split3(v) (v)[0], (v)[1], (v)[2]
 
 bool _FileExists(QString path) {
     QFileInfo check_file(path);
@@ -25,7 +27,7 @@ void OpenGLMesh::init()
 
     // try find tetrahedralization.
     QString tetra_name = file_location_ + "tetra/" + file_name_;
-    if (!_FileExists(tetra_name + TETRA_ELE_EXTENSION))
+    if (!_FileExists(tetra_name + TETRA_ELE_EXTENSION) && NEED_TETRA)
     {
         TriMesh temp_mesh = this->mesh_;
         mesh_unify(1.0, true, temp_mesh); // unify to 1.0 before tetra().
@@ -52,7 +54,8 @@ void OpenGLMesh::init()
         ////mesh_.release_face_normals();
     }
 
-    ReadTetra(tetra_name);
+    if (NEED_TETRA)
+        ReadTetra(tetra_name);
 
     update();
 }
@@ -75,6 +78,42 @@ void OpenGLMesh::set_point(int idx, QVector3D p)
 {
     auto v_handle = mesh_.vertex_handle(idx);
     mesh_.set_point(v_handle, qvec2vec3f(p - position_));
+}
+
+void OpenGLMesh::slice(const SliceConfig& slice_config)
+{
+    this->slice_config_ = slice_config;
+    update();
+    tag_change();
+}
+
+OpenGLMesh::OpenGLMesh(const OpenGLMesh& rhs)
+{
+    vbuffer = rhs.vbuffer;
+    voffset = rhs.voffset;
+    ebuffer = rhs.ebuffer;
+
+    name_ = rhs.name_ + QString("_clone");
+    file_location_ = rhs.file_location_;
+    file_name_ = rhs.file_name_ + QString("_clone");
+    mesh_extension_ = rhs.mesh_extension_;
+    need_scale_ = rhs.need_scale_;
+    need_centralize_ = rhs.need_centralize_;
+    use_face_normal_ = rhs.use_face_normal_;
+    show_tetra_ = rhs.show_tetra_;
+    scale_ = rhs.scale_;
+    center_ = rhs.center_;
+    max_point = rhs.max_point;
+    min_point = rhs.min_point;
+    scale_x = rhs.scale_x;
+    scale_y = rhs.scale_y;
+    scale_z = rhs.scale_z;
+    position_ = rhs.position_;
+    color_ = rhs.color_;
+    changed_ = rhs.changed_;
+    mesh_ = rhs.mesh_;
+    tetra_ = rhs.tetra_;
+    slice_config_ = rhs.slice_config_;
 }
 
 OpenGLMesh::~OpenGLMesh()
@@ -117,9 +156,11 @@ void OpenGLMesh::update()
     int i = 0;
     if (show_tetra_)
     {
-
         for (int v_i = 0; v_i < tetra_.n_vertices; ++v_i)
         {
+            //if (slice_no_in_show_area(_split3(tetra_.point[v_i])))
+            //    continue;
+
             _push_vec(vbuffer, tetra_.point[v_i]);
 
             if (v_i < tetra_.n_vertices_boundary)
@@ -148,7 +189,7 @@ void OpenGLMesh::update()
                 _push_vec(vbuffer, 1.0f, 1.0f, 1.0f);
             i++;
         }
-        assert(vbuffer.size() == tetra_.n_vertices * TOTAL_ATTRIBUTE_SIZE);
+//        assert(vbuffer.size() == tetra_.n_vertices * TOTAL_ATTRIBUTE_SIZE);
 
         for (auto f_it : mesh_.faces())
         {
@@ -181,7 +222,6 @@ void OpenGLMesh::update()
             ebuffer.push_back(y);
             ebuffer.push_back(w);
         }
-        //assert(ebuffer.size() == mesh_.n_faces() * VERTICES_PER_FACE);
     }
     else if (use_face_normal_)
     {
@@ -189,6 +229,18 @@ void OpenGLMesh::update()
         for (auto f_it : mesh_.faces())
         {
             auto fv_it = mesh_.fv_iter(f_it);
+            bool show = true;
+            for (; fv_it; ++fv_it)
+            {
+                if (slice_no_in_show_area(_split3(mesh_.point(fv_it))))
+                {
+                    show = false;
+                    break;
+                }
+            }
+            if (!show)
+                continue;
+            fv_it = mesh_.fv_iter(f_it);
             for (; fv_it; ++fv_it)
             {
                 _push_vec(vbuffer, mesh_.point(*fv_it) + qvec2vec3f(position_));
@@ -197,7 +249,7 @@ void OpenGLMesh::update()
                         sinf((i + 0) * 3.14f / 30) * 0.2f + 0.8f,
                         sinf((i + 0) * 3.14f / 60) * 0.2f + 0.8f,
                         sinf((i + 0) * 3.14f / 120) * 0.2f + 0.8f
-                });
+                    });
                 else
                     _push_vec(vbuffer, this->color_);
                 _push_vec(vbuffer, mesh_.normal(f_it)); // face normal
@@ -206,7 +258,6 @@ void OpenGLMesh::update()
                 ebuffer.push_back(vid++);
             }
         }
-        assert(ebuffer.size() == mesh_.n_faces() * VERTICES_PER_FACE);
     }
     else
     {
@@ -224,15 +275,26 @@ void OpenGLMesh::update()
             _push_vec(vbuffer, mesh_.normal(v_it)); // vertex normal
             i++;
         }
-        assert(vbuffer.size() == mesh_.n_vertices() * TOTAL_ATTRIBUTE_SIZE);
 
         for (auto f_it : mesh_.faces())
         {
             auto fv_it = mesh_.fv_iter(f_it);
+            bool show = true;
             for (; fv_it; ++fv_it)
-                ebuffer.push_back(fv_it->idx());
+            {
+                if (slice_no_in_show_area(_split3(mesh_.point(fv_it))))
+                {
+                    show = false;
+                    break;
+                }
+            }
+            fv_it = mesh_.fv_iter(f_it);
+            if (show)
+                for (; fv_it; ++fv_it)
+                {
+                    ebuffer.push_back(fv_it->idx());
+                }
         }
-        assert(ebuffer.size() == mesh_.n_faces() * VERTICES_PER_FACE);
     }
 
     changed_ = true;
@@ -279,6 +341,8 @@ float OpenGLMesh::get_sacle()
 
     float xmax = max_pos[0], ymax = max_pos[1], zmax = max_pos[2];
     float xmin = min_pos[0], ymin = min_pos[1], zmin = min_pos[2];
+    max_point = { xmax, ymax, zmax };
+    min_point = { xmin, ymin, zmin };
 
     // here we use height(z) as scale target.
     float scaleX = xmax - xmin;
@@ -314,6 +378,8 @@ void OpenGLMesh::mesh_unify(float scale, bool centralize)
 
     float xmax = max_pos[0], ymax = max_pos[1], zmax = max_pos[2];
     float xmin = min_pos[0], ymin = min_pos[1], zmin = min_pos[2];
+    max_point = { xmax, ymax, zmax };
+    min_point = { xmin, ymin, zmin };
 
     // here we use height(z) as scale target.
     float scaleX = xmax - xmin;
@@ -345,6 +411,8 @@ void OpenGLMesh::mesh_unify(float scale, bool centralize)
         OpenMesh::Vec3f res_om{ res[0], res[1], res[2] };
         mesh_.set_point(v, res_om);
     }
+    max_point = (max_point - qvec2vec3f(center)) * scaleV;
+    min_point = (min_point - qvec2vec3f(center)) * scaleV;
     // REMARK: OpenMesh::Vec3f has conflict with Vec3f;
 }
 
@@ -394,6 +462,42 @@ void OpenGLMesh::mesh_unify(float scale, bool centrailze, TriMesh& mesh) const
         mesh.set_point(v, res_om);
     }
     // REMARK: OpenMesh::Vec3f has conflict with Vec3f;
+}
+
+bool OpenGLMesh::slice_no_in_show_area(float x, float y, float z)
+{
+    if (slice_config_.revX)
+    {
+        if (x > min_point.x() + slice_config_.sliceX * scale_x)
+            return true;
+    }
+    else
+    {
+        if (x < min_point.x() + slice_config_.sliceX * scale_x)
+            return true;
+    }
+    if (slice_config_.revY)
+    {
+        if (y > min_point.y() + slice_config_.sliceY * scale_y)
+            return true;
+    }
+    else
+    {
+        if (y < min_point.y() + slice_config_.sliceY * scale_y)
+            return true;
+    }
+    if (slice_config_.revZ)
+    {
+        if (z > min_point.z() + slice_config_.sliceZ * scale_z)
+            return true;
+    }
+    else
+    {
+        if (z < min_point.z() + slice_config_.sliceZ * scale_z)
+            return true;
+    }
+
+    return false;
 }
 
 void OpenGLMesh::ReadTetra(const QString& name)

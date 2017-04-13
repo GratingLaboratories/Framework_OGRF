@@ -1,10 +1,12 @@
 #pragma once
 #include "OpenMeshBasic.h"
 #include "TetrahedralizationSolution.h"
+#include "GlobalConfig.h"
 #include <QString>
 #include <memory>
 #include <vector>
 #include <array>
+#include "SliceConfig.h"
 
 #define ATTRIBUTE_POSITION_LOCATION 0
 #define ATTRIBUTE_POSITION_SIZE     3
@@ -55,11 +57,13 @@ class OpenGLMesh
 {
 public:
     OpenGLMesh() = default;
+    OpenGLMesh(const OpenGLMesh &rhs);
     ~OpenGLMesh();
     void update();
     void init();
     void tag_change();
     void set_point(int idx, QVector3D p);
+    void slice(const SliceConfig &slice_config);
     TriMesh &mesh() { return mesh_; }
     TetraMesh &tmesh() { return tetra_; }
     bool changed(); 
@@ -78,9 +82,12 @@ public:
     bool show_tetra_;
     float scale_;
     QVector3D center_;
+    QVector3D max_point;
+    QVector3D min_point;
     float scale_x;
     float scale_y;
     float scale_z;
+
     QVector3D position_;
     QVector3D color_;
 
@@ -93,8 +100,10 @@ private:
     float get_sacle();
     void mesh_unify(float scale = 1.0, bool centrailze = false);
     void mesh_unify(float scale, bool centrailze, TriMesh &mesh) const;
+    bool slice_no_in_show_area(float x, float y, float z);
 
     void ReadTetra(const QString &name);
     TetraMesh tetra_;
+    SliceConfig slice_config_;
 };
 

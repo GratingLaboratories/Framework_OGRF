@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setFont(QFont("Inziu Iosevka SC"));
-    MeshCompression w;
+    MeshProgram w;
     w.show();
     return a.exec();
 }
