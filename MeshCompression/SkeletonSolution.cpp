@@ -91,6 +91,17 @@ void SkeletonSolution::Basic_Prepare_and_Calculate_Laplacian(vector<T> &tv_Lap)
     }
 }
 
+void SkeletonSolution::Input_Variables_to_Engine(Engine* ep)
+{
+    // scalar
+    mxArray *scalar_Weight_Preserve = mxCreateDoubleMatrix(1, 1, mxREAL);
+    mxGetPr(scalar_Weight_Preserve)[0] = tcl_.get_value("Weight_Preserve");
+    engPutVariable(ep, "Weight_Preserve", scalar_Weight_Preserve);
+    mxArray *scalar_Iteration_Limit = mxCreateDoubleMatrix(1, 1, mxREAL);
+    mxGetPr(scalar_Iteration_Limit)[0] = tcl_.get_value("Iteration_Limit");
+    engPutVariable(ep, "Iteration_Limit", scalar_Iteration_Limit);
+}
+
 void SkeletonSolution::Input_Laplacian_to_Engine(const vector<T> &tv_Lap, Engine* ep)
 {
     // sparse matrix: Laplacian
@@ -111,6 +122,22 @@ void SkeletonSolution::Input_Laplacian_to_Engine(const vector<T> &tv_Lap, Engine
     engPutVariable(ep, "LapCol", LapCol);
     engPutVariable(ep, "LapVal", LapVal);
     engEvalString(ep, "Lap = sparse(LapRow, LapCol, LapVal);");
+}
+
+void SkeletonSolution::Input_Positions_to_Engine(Engine* ep)
+{
+    // matrix: X_0
+    // long matrix: Geometry
+    mxArray *X_0 = mxCreateDoubleMatrix(n_vertices, 3, mxREAL);
+
+    for (int i = 0; i < n_vertices; i++)
+    {
+        mxGetPr(X_0)[i] = positions[i][0];
+        mxGetPr(X_0)[i + n_vertices] = positions[i][1];
+        mxGetPr(X_0)[i + n_vertices * 2] = positions[i][2];
+
+    }
+    engPutVariable(ep, "X_0", X_0);
 }
 
 void SkeletonSolution::skeletonize()
@@ -143,10 +170,31 @@ void SkeletonSolution::skeletonize()
         return;
     }
 
+    Input_Variables_to_Engine(ep);
+
     // After this sub-routine, sparse matrix 'Lap' added to workspace.
     Input_Laplacian_to_Engine(tv_Lap, ep);
 
-    // 
+    // After this sub-routine, n*3 matrix 'X_0' added to workspace.
+    Input_Positions_to_Engine(ep);
+
+    // run MATLAB script
+    QFile script_file{ tcl_.get_string("Script_Filename") };
+    script_file.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsv{ &script_file };
+    QString script = tsv.readAll();
+    engEvalString(ep, script.toStdString().c_str());
+
+    // Write Back
+    mxArray *ResX = engGetVariable(ep, "X");
+    for (int i = 0; i < n_vertices; i++)
+    {
+        Vector3f pos{ 0, 0, 0 };
+        pos[0] = mxGetPr(ResX)[i];
+        pos[1] = mxGetPr(ResX)[i + n_vertices];
+        pos[2] = mxGetPr(ResX)[i + n_vertices * 2];
+        mesh_.point(mesh_.vertex_handle(i)) = { SPLIT(pos) };
+    }
 
     msg_.log("complete skeletonize.");
 }

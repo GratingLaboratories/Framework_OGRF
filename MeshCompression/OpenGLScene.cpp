@@ -93,6 +93,15 @@ void OpenGLScene::add_model(OpenGLMesh& mesh)
     model.update();
 }
 
+void OpenGLScene::remove_model(const QString& name)
+{
+    for (auto m_iter = models_.begin(); m_iter != models_.end(); ++m_iter)
+    {
+        if ((*m_iter)->name_ == name)
+            models_.erase(m_iter);
+    }
+}
+
 OpenGLScene::~OpenGLScene()
 {
 }
