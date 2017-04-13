@@ -13,7 +13,8 @@
 #define W_P 20.0f
 
 SkeletonSolution::SkeletonSolution(TriMesh &mesh, ConsoleMessageManager &msg) :
-    msg_(msg), n_vertices(0), n_edges(0), n_faces(0), mesh_(mesh)
+    msg_(msg), n_vertices(0), n_edges(0), n_faces(0), mesh_(mesh),
+    tcl_{ "./config/skeleton.config" }
 {
 }
 
@@ -145,7 +146,7 @@ void SkeletonSolution::skeletonize()
     // After this sub-routine, sparse matrix 'Lap' added to workspace.
     Input_Laplacian_to_Engine(tv_Lap, ep);
 
-    //     
+    // 
 
     msg_.log("complete skeletonize.");
 }

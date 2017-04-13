@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <engine.h>
+#include <TextConfigLoader.h>
 
 using Vector3f = Eigen::Vector3f;
 using std::vector;
@@ -24,6 +25,7 @@ public:
 
 private:
     ConsoleMessageManager &msg_;
+    TextConfigLoader tcl_;
     TriMesh &mesh_;
 
     int n_vertices;
