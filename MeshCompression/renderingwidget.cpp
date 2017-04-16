@@ -267,7 +267,7 @@ void RenderingWidget::paintGL()
     vao_basic_->bind();
         vbo_basic_->bind();
             vbo_basic_->allocate(vbo_basic_buffer_.data(), vbo_basic_buffer_.size() * sizeof(GLfloat));
-            veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
+            //veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
         vbo_basic_->release();
     vao_basic_->release();
 
@@ -279,25 +279,11 @@ void RenderingWidget::paintGL()
             shader_program_basic_->setUniformValue("view", camera_.view_mat());
             shader_program_basic_->setUniformValue("projection", mat_projection);
 
-            glDrawElements(GL_LINES, veo_basic_buffer_.size(), GL_UNSIGNED_INT, (GLvoid *)0);
+            glDrawArrays(GL_LINES, 0, vbo_basic_buffer_.size());
         }
         vao_basic_->release();
     }
     shader_program_basic_->release();
-
-    //// TODO
-    ////glLineWidth(2.5);
-    //glColor3f(1.0, 0.0, 0.0);
-    //glBegin(GL_LINES);
-    //glVertex3f(0.0, 0.0, 0.0);
-    //glVertex3f(10.0, 0.0, 0.0);
-    //glEnd();
-    //glColor3f(0.0, 1.0, 0.0);
-    //glBegin(GL_LINES);
-    //glVertex3f(0.0, 0.0, 0.0);
-    //glVertex3f(0.0, 10.0, 0.0);
-    //glEnd();
-
 
     // Restore Polygon Mode to ensure the correctness of native painter
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -915,20 +901,25 @@ void RenderingWidget::OpenOneMesh()
 void RenderingWidget::Render_Axes()
 {
     vbo_basic_buffer_.clear();
-    veo_basic_buffer_.clear();
+    //veo_basic_buffer_.clear();
     _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
     _push_vec(vbo_basic_buffer_, { 1.0f, 0, 0 });
-    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
-    _push_vec(vbo_basic_buffer_, { 0, 1.0f, 0 });
-    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
-    _push_vec(vbo_basic_buffer_, { 0, 0, 1.0f });
+
     _push_vec(vbo_basic_buffer_, { 5, 0, 0 });
     _push_vec(vbo_basic_buffer_, { 1.0f, 0.5f, 0 });
+
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 1.0f, 0 });
+
     _push_vec(vbo_basic_buffer_, { 0, 5, 0 });
     _push_vec(vbo_basic_buffer_, { 0, 1.0f, 0.5f });
+
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 0, 1.0f });
+
     _push_vec(vbo_basic_buffer_, { 0, 0, 5 });
     _push_vec(vbo_basic_buffer_, { 0.5f, 0, 1.0f });
-    veo_basic_buffer_ = { 0, 3, 1, 4, 2, 5 };
+    //veo_basic_buffer_ = { 0, 3, 1, 4, 2, 5 };
 }
 
 void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
@@ -998,6 +989,7 @@ void RenderingWidget::Load_Skeleton()
         mesh.update();
     }
 
+    // add link lines for test.
     if (scene.get("Skeleton") != nullptr)
     {
         auto &mesh = scene.get("Main")->mesh();
