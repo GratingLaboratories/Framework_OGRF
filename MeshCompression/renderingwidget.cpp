@@ -9,6 +9,7 @@
 
 #include "GlobalConfig.h"
 #include "SimulatorSimpleSpring_Midpoint.h"
+#include "SkeletonSolution.h"
 //#include "PsudoColorRGB.h"
 
 #define updateGL update
@@ -22,8 +23,23 @@
 
 #define INF                     9.9e9f
 
+#define _split3(v) (v)[0], (v)[1], (v)[2]
+
 typedef QVector3D  Vec3f;
 using Vec3f_om = OpenMesh::Vec3f;
+
+inline void _push_vec(std::vector<GLfloat> &v, const OpenMesh::Vec3f &data)
+{
+    v.push_back(data[0]);
+    v.push_back(data[1]);
+    v.push_back(data[2]);
+}
+
+template <typename T1, typename T2>
+T2 vec_cast(const T1 &v)
+{
+    return{ v[0], v[1], v[2] };
+}
 
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     QOpenGLWidget(parent),
@@ -87,8 +103,6 @@ void RenderingWidget::initializeGL()
 
     QString vertexShaderFileName{ "shader/BasicPhongVertexShader.vertexshader" };
     QString fragmentShaderFileName{ "shader/BasicPhongFragmentShader.fragmentshader" };
-    /*QString vertexShaderFileName_Rigid{ "shader/PureColorVertexShader.vertexshader" };
-    QString fragmentShaderFileName_Rigid{ "shader/PureColorFragmentShader.fragmentshader" };*/
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
@@ -103,15 +117,9 @@ void RenderingWidget::initializeGL()
     QString fragmentShaderSource{ tsf.readAll() };
     fragmentShaderFile.close();
 
-    shader_program_basic_phong_ = new QOpenGLShaderProgram(this);
-    shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    //shader_program_basic_phong_->link();
-
-    //shader_program_rigid_edge_ = new QOpenGLShaderProgram(this);
-    //shader_program_rigid_edge_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    //shader_program_rigid_edge_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-
+    shader_program_phong_ = new QOpenGLShaderProgram(this);
+    shader_program_phong_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    shader_program_phong_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
 
     vao = new QOpenGLVertexArrayObject();
     vao->create();
@@ -130,14 +138,61 @@ void RenderingWidget::initializeGL()
         veo->create();
         veo->bind();
 
-        shader_program_basic_phong_->enableAttributeArray(0);
-        shader_program_basic_phong_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 9 * sizeof(GLfloat));
-        shader_program_basic_phong_->enableAttributeArray(1);
-        shader_program_basic_phong_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
-        shader_program_basic_phong_->enableAttributeArray(2);
-        shader_program_basic_phong_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+        shader_program_phong_->enableAttributeArray(0);
+        shader_program_phong_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 9 * sizeof(GLfloat));
+        shader_program_phong_->enableAttributeArray(1);
+        shader_program_phong_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+        shader_program_phong_->enableAttributeArray(2);
+        shader_program_phong_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
     }
     vao->release();
+
+    // Basic Pure Color Shader
+    QString vertexShaderFileName_Basic{ "shader/PureColorVertexShader.vertexshader" };
+    QString fragmentShaderFileName_Basic{ "shader/PureColorFragmentShader.fragmentshader" };
+
+    // Read shader source code from files.
+    QFile vertexShaderFile_Basic{ vertexShaderFileName_Basic };
+    vertexShaderFile_Basic.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsvb{ &vertexShaderFile_Basic };
+    QString vertexShaderSource_Basic{ tsvb.readAll() };
+    vertexShaderFile_Basic.close();
+
+    QFile fragmentShaderFile_Basic{ fragmentShaderFileName_Basic };
+    fragmentShaderFile_Basic.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsfb{ &fragmentShaderFile_Basic };
+    QString fragmentShaderSource_Basic{ tsfb.readAll() };
+    fragmentShaderFile_Basic.close();
+
+    shader_program_basic_ = new QOpenGLShaderProgram(this);
+    shader_program_basic_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource_Basic);
+    shader_program_basic_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_Basic);
+
+    vao_basic_ = new QOpenGLVertexArrayObject();
+    vao_basic_->create();
+
+    vao_basic_->bind();
+    {
+        // vertex buffer.
+        vbo_basic_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+        vbo_basic_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+        vbo_basic_->create();
+        vbo_basic_->bind();
+
+        // element index buffer
+        veo_basic_ = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+        veo_basic_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+        veo_basic_->create();
+        veo_basic_->bind();
+
+        shader_program_basic_->enableAttributeArray(0);
+        shader_program_basic_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 6 * sizeof(GLfloat));
+        shader_program_basic_->enableAttributeArray(1);
+        shader_program_basic_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
+        // shader_program_basic_->enableAttributeArray(2);
+        // shader_program_basic_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+    }
+    vao_basic_->release();
 
     camera_ = OpenGLCamera(DEFAULT_CAMERA_POSITION, { 0.0f, 0.0f, 0.0f });
 }
@@ -189,45 +244,57 @@ void RenderingWidget::paintGL()
         vao->release();        
     }
 
-    shader_program_basic_phong_->bind();
+    QMatrix4x4 mat_model; 
+            
+    QMatrix4x4 mat_projection;
+    mat_projection.perspective(45.0f,
+        float(this->width()) / float(this->height()),
+        0.1f, 100.f);
+
+    shader_program_phong_->bind();
     {
         vao->bind();
         {
-            QMatrix4x4 mat_model; 
-            
-            QMatrix4x4 mat_projection;
-            mat_projection.perspective(45.0f,
-                float(this->width()) / float(this->height()),
-                0.1f, 100.f);
-
-            shader_program_basic_phong_->setUniformValue("model", mat_model);
-            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat());
-            shader_program_basic_phong_->setUniformValue("projection", mat_projection);
+            shader_program_phong_->setUniformValue("model", mat_model);
+            shader_program_phong_->setUniformValue("view", camera_.view_mat());
+            shader_program_phong_->setUniformValue("projection", mat_projection);
             if (light_dir_fix_)
-                shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
+                shader_program_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
             else
-                shader_program_basic_phong_->setUniformValue("lightDirFrom", camera_.direction());
-            shader_program_basic_phong_->setUniformValue("viewPos", camera_.position());
+                shader_program_phong_->setUniformValue("lightDirFrom", camera_.direction());
+            shader_program_phong_->setUniformValue("viewPos", camera_.position());
 
             glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
         }
         vao->release();
     }
+    shader_program_phong_->release();
+    shader_program_basic_->bind();
 
-    // TODO
-    //glLineWidth(2.5);
-    glColor3f(1.0, 0.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(10.0, 0.0, 0.0);
-    glEnd();
-    glColor3f(0.0, 1.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0.0, 10.0, 0.0);
-    glEnd();
+    vbo_basic_buffer_.clear();
+    Render_Indication();
+    Render_Axes();
+    //printf("%lld\n", vbo_basic_buffer_.size());
 
-    shader_program_basic_phong_->release();
+    vao_basic_->bind();
+        vbo_basic_->bind();
+            vbo_basic_->allocate(vbo_basic_buffer_.data(), vbo_basic_buffer_.size() * sizeof(GLfloat));
+            //veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
+        vbo_basic_->release();
+    vao_basic_->release();
+
+    {
+        vao_basic_->bind();
+        {
+            shader_program_basic_->setUniformValue("model", mat_model);
+            shader_program_basic_->setUniformValue("view", camera_.view_mat());
+            shader_program_basic_->setUniformValue("projection", mat_projection);
+
+            glDrawArrays(GL_LINES, 0, vbo_basic_buffer_.size() / 6);
+        }
+        vao_basic_->release();
+    }
+    shader_program_basic_->release();
 
     // Restore Polygon Mode to ensure the correctness of native painter
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -607,9 +674,12 @@ void RenderingWidget::ReadScene()
 
     scene.open(filename);
 
-    sim = new SimulatorSimpleSpring(scene);
-    //sim = new SimulatorSimpleFED(scene);
-    sim->init(0.0f);
+    /// BRANCH: DEV_SKELETON
+    /// DO NOT MERGE THIS CHANGE
+    /// DISABLED SIM PART.
+    //sim = new SimulatorSimpleSpring(scene);
+    ////sim = new SimulatorSimpleFED(scene);
+    //sim->init(0.0f);
 
     frame = 0;
 	updateGL();
@@ -617,147 +687,41 @@ void RenderingWidget::ReadScene()
 
 void RenderingWidget::WriteMesh()
 {
-	//if (mesh_.n_vertices() == 0)
-	//{
-	//	emit(QString("The Mesh is Empty !"));
-	//	return;
-	//}
-	//QString filename = QFileDialog::
-	//	getSaveFileName(this, tr("Write Mesh"),
-	//	"..", tr("Meshes (*.obj)"));
+    auto &mesh = scene.get("Main")->mesh();
+    mesh_unify(mesh);
+	if (scene.model_number() == 0 || mesh.n_vertices() == 0)
+	{
+		emit(QString("The Mesh is Empty !"));
+		return;
+	}
+	QString filename = QFileDialog::
+		getSaveFileName(this, tr("Write Mesh"),
+		"..", tr("Meshes (*.obj)"));
 
-	//if (filename.isEmpty())
-	//	return;
+	if (filename.isEmpty())
+		return;
 
- //   // 中文路径支持
- //   QTextCodec *code = QTextCodec::codecForName("gd18030");
- //   QTextCodec::setCodecForLocale(code);
- //   QByteArray byfilename = filename.toLocal8Bit();
- //   if (!OpenMesh::IO::write_mesh(mesh_, byfilename.data()))
- //   {
- //       std::cerr << "Cannot write mesh file." << std::endl;
- //       exit(0xA1);
- //   }
+    // 中文路径支持
+    QTextCodec *code = QTextCodec::codecForName("gd18030");
+    QTextCodec::setCodecForLocale(code);
+    QByteArray byfilename = filename.toLocal8Bit();
+    if (!OpenMesh::IO::write_mesh(mesh, byfilename.data()))
+    {
+        std::cerr << "Cannot write mesh file." << std::endl;
+        exit(0xA1);
+    }
 
-	//emit(operatorInfo(QString("Write Mesh to ") + filename + QString(" Done")));
+	emit(operatorInfo(QString("Write Mesh to ") + filename + QString(" Done")));
 }
 
 void RenderingWidget::LoadTexture()
 {
-//	QString filename = QFileDialog::getOpenFileName(this, tr("Load Texture"),
-//		"..", tr("Images(*.bmp *.jpg *.png *.jpeg)"));
-//	if (filename.isEmpty())
-//	{
-//		emit(operatorInfo(QString("Load Texture Failed!")));
-//		return;
-//	}
-//    
-//    QByteArray filename_ba = filename.toLocal8Bit();
-//    int width, height;
-//    unsigned char* image = SOIL_load_image(filename_ba.data(), &width, &height, 0, SOIL_LOAD_RGB);
-//
-//	glGenTextures(1, &texture_[0]);
-//    glBindTexture(GL_TEXTURE_2D, texture_[0]);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-//    gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, width, height,
-//        GL_RGBA, GL_UNSIGNED_BYTE, image);
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width,
-//        height, 0, GL_RGB, GL_UNSIGNED_BYTE,
-//        image);
-//    SOIL_free_image_data(image);
-//    glBindTexture(GL_TEXTURE_2D, 0);
-//    
-//    /* original code.
-//	QImage tex1, buf;
-//	if (!buf.load(filename))
-//	{
-//		//        QMessageBox::warning(this, tr("Load Fialed!"), tr("Cannot Load Image %1").arg(filenames.at(0)));
-//		emit(operatorInfo(QString("Load Texture Failed!")));
-//		return;
-//
-//	}
-//    tex1 = buf;
-//	glBindTexture(GL_TEXTURE_2D, texture_[0]);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-//	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, tex1.width(), tex1.height(),
-//		GL_RGBA, GL_UNSIGNED_BYTE, tex1.bits());
-//    */
-//	is_load_texture_ = true;
-//	emit operatorInfo(QString("Load Texture from ") + filename + QString(" Done"));
 }
 
 void RenderingWidget::ControlLineEvent(const QString &cmd_text)
 {
     emit operatorInfo(cmd_text);
 }
-// For reference.
-//void param_show(TriMesh &mesh, ParamSurf &param, int size = 512, int bdr = 10)
-//{
-//    const int img_size = size;
-//    const int bdr_size = bdr;
-//    QImage img(img_size + 2 * bdr_size, img_size + 2 * bdr_size, QImage::Format_ARGB32);
-//    QPainter ptr;
-//    ptr.begin(&img);
-//    ptr.setPen(Qt::white);
-//    ptr.setBrush(Qt::white);
-//    ptr.drawRect(0, 0, img_size + 2 * bdr_size, img_size + 2 * bdr_size);
-//    QPen pt(Qt::darkBlue, 4);
-//    ptr.setPen(pt);
-//    for (auto v : mesh.vertices())
-//    {
-//        auto pos = param.query(v);
-//        int x = (int)(pos[0] * img_size) + bdr_size;
-//        int y = (int)(pos[1] * img_size) + bdr_size;
-//        ptr.drawPoint(x, y);
-//    }
-//    QPen ed(Qt::blue, 1);
-//    ptr.setPen(ed);
-//    for (auto he : mesh.halfedges())
-//    {
-//        auto from = mesh.from_vertex_handle(he);
-//        auto to = mesh.to_vertex_handle(he);
-//        auto pf = param.query(from);
-//        auto pt = param.query(to);
-//        ptr.drawLine(pf[0] * img_size + bdr_size
-//            , pf[1] * img_size + bdr_size
-//            , pt[0] * img_size + bdr_size
-//            , pt[1] * img_size + bdr_size);
-//    }
-//    ptr.end();
-//
-//    QMessageBox box;
-//    box.setIconPixmap(QPixmap::fromImage(img));
-//    box.show();
-//    box.exec();
-//}
-
-//void RenderingWidget::Param()
-//{
-//    if (mesh_.vertices_empty())
-//        return;
-//
-//    bool ok;
-//    QString ori;
-//    QTextStream ori_s(&ori);
-//    ori_s << _method << " "
-//        << _boundary;
-//    QString s = QInputDialog::getText(this, tr("Settings"), tr("PARAM(1..3), BOUNDARY(4..5)"),
-//        QLineEdit::Normal, ori, &ok);
-//    if (ok)
-//    {
-//        QTextStream ss(&s);
-//        ss >> _method >> _boundary;
-//    }
-//
-//    param.setting(_method, _boundary);
-//    param.init();
-//    param_show(mesh_, param, 500, 10);
-//
-//    updateGL();
-//    return;
-//}
 
 void RenderingWidget::CheckDrawPoint(bool bv)
 {
@@ -813,253 +777,153 @@ void RenderingWidget::CheckShowDiff(bool bv)
     updateGL();
 }
 
-//void RenderingWidget::DrawAxes(bool bV)
-//{
-////	if (!bV)
-////		return;
-////	//x axis
-////	glColor3f(1.0, 0.0, 0.0);
-////	glBegin(GL_LINES);
-////	glVertex3f(0, 0, 0);
-////	glVertex3f(0.7, 0.0, 0.0);
-////	glEnd();
-////	glPushMatrix();
-////	glTranslatef(0.7, 0, 0);
-////	glRotatef(90, 0.0, 1.0, 0.0);
-////	glutSolidCone(0.02, 0.06, 20, 10);
-////	glPopMatrix();
-////
-////	//y axis
-////	glColor3f(0.0, 1.0, 0.0);
-////	glBegin(GL_LINES);
-////	glVertex3f(0, 0, 0);
-////	glVertex3f(0.0, 0.7, 0.0);
-////	glEnd();
-////
-////	glPushMatrix();
-////	glTranslatef(0.0, 0.7, 0);
-////	glRotatef(90, -1.0, 0.0, 0.0);
-////	glutSolidCone(0.02, 0.06, 20, 10);
-////	glPopMatrix();
-////
-////	//z axis
-////	glColor3f(0.0, 0.0, 1.0);
-////	glBegin(GL_LINES);
-////	glVertex3f(0, 0, 0);
-////	glVertex3f(0.0, 0.0, 0.7);
-////	glEnd();
-////	glPushMatrix();
-////	glTranslatef(0.0, 0, 0.7);
-////	glutSolidCone(0.02, 0.06, 20, 10);
-////	glPopMatrix();
-////
-////	glColor3f(1.0, 1.0, 1.0);
-////}
-////
-////void RenderingWidget::DrawPoints(bool bv)
-////{
-////    if (!bv || mesh_.vertices_empty())
-////        return;
-////
-////    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-////
-////    if (DEBUG_BIG_POINT)
-////    {
-////        glPointSize(5.0);
-////    }
-////
-////    glBegin(GL_POINTS);
-////
-////    for (auto v : mesh_.vertices())
-////    {
-////        auto pos = mesh_.point(v);
-////        if (is_show_result_ && compress_ok_)
-////            pos = position_map_[v];
-////        auto nor = mesh_.normal(v);
-////        glNormal3fv(nor.data());
-////        glVertex3fv(pos.data());
-////    }
-////
-////    glEnd();
-////}
-////
-////void RenderingWidget::DrawEdge(bool bv)
-////{
-////    if (!bv || mesh_.vertices_empty())
-////        return;
-////
-////    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-////
-////    for (auto f : mesh_.faces())
-////    {
-////        glBegin(GL_LINE_LOOP);
-////
-////        auto he = mesh_.halfedge_handle(f);
-////        do
-////        {
-////            auto v = mesh_.to_vertex_handle(he);
-////            glNormal3fv(mesh_.normal(v).data());
-////            if (is_show_result_ && compress_ok_)
-////                glVertex3fv(position_map_[v].data());
-////            else
-////                glVertex3fv(mesh_.point(v).data());
-////
-////            he = mesh_.next_halfedge_handle(he);
-////        } while (he != mesh_.halfedge_handle(f));
-////
-////        glEnd();
-////    }
-////
-////    // different method [WRONG]
-/////*
-////    for (auto he : mesh_.halfedges())
-////    {
-////        glBegin(GL_LINE_LOOP);
-////        auto v_from = mesh_.from_vertex_handle(he);
-////        glVertex3fv(mesh_.point(v_from).data());
-////        glNormal3fv(mesh_.normal(v_from).data());
-////
-////        auto v_to = mesh_.to_vertex_handle(he);
-////        glVertex3fv(mesh_.point(v_to).data());
-////        glNormal3fv(mesh_.normal(v_to).data());
-////
-////        glEnd();
-////    }
-////*/
-//}
-//
-//void RenderingWidget::DrawFace(bool bv)
-//{
-//    //if (!bv || mesh_.vertices_empty())
-//    //    return;
-//
-//    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//
-//    //glBegin(GL_TRIANGLES);
-//
-//    //if (is_show_result_ && compress_ok_)
-//    //{   // Show Result Mode
-//    //    for (auto f : mesh_.faces())
-//    //    {
-//    //        auto he = mesh_.halfedge_handle(f);
-//    //        do
-//    //        {
-//    //            auto v = mesh_.to_vertex_handle(he);
-//    //            glNormal3fv(mesh_.normal(v).data());
-//    //            glVertex3fv(position_map_[v].data());
-//
-//    //            he = mesh_.next_halfedge_handle(he);
-//    //        } while (he != mesh_.halfedge_handle(f));
-//    //    }
-//    //}
-//    //else if (is_show_diff_ && compress_ok_)
-//    //{   // Show diff Mode
-//    //    CPseudoColorRGB  Psdc;  // 定义计算colormap对象
-//
-//    //    Psdc.SetPCRamp(0.0, 1.0);
-//    //    Psdc.SetPCType(PCT_JET);    // 变换类型：红绿蓝
-//    //    Psdc.SetPCValueRange(0.0, 1.0); // 定义范围
-//
-//    //    // 示范：如何计算值value所对应的rgb颜色
-//    //    double color[3];
-//    //    double value;
-//    //    //Psdc.GetPC(color, value);  // 返回的color值范围为[0,255]
-//
-//    //    for (auto f : mesh_.faces())
-//    //    {
-//    //        auto he = mesh_.halfedge_handle(f);
-//    //        do
-//    //        {
-//    //            auto v = mesh_.to_vertex_handle(he);
-//    //            glNormal3fv(mesh_.normal(v).data());
-//    //            Psdc.GetPC(color, difference_map_[v] / max_difference_);
-//    //            glColor3f(color[0], color[1], color[2]);
-//    //            glVertex3fv(mesh_.point(v).data());
-//
-//    //            he = mesh_.next_halfedge_handle(he);
-//    //        } while (he != mesh_.halfedge_handle(f));
-//    //    }
-//    //}
-//    //else if (!is_low_poly_)
-//    //{   // Normal Mode
-//    //    for (auto f : mesh_.faces())
-//    //    {
-//    //        auto he = mesh_.halfedge_handle(f);
-//    //        do
-//    //        {
-//    //            auto v = mesh_.to_vertex_handle(he);
-//    //            glNormal3fv(mesh_.normal(v).data());
-//    //            glColor3f(1.0f, 1.0f, 1.0f);
-//    //            glVertex3fv(mesh_.point(v).data());
-//
-//    //            he = mesh_.next_halfedge_handle(he);
-//    //        } while (he != mesh_.halfedge_handle(f));
-//    //    }
-//    //}
-//    //else 
-//    //{   // Low Poly Mode
-//    //    for (auto f : mesh_.faces())
-//    //    {
-//    //        auto he = mesh_.halfedge_handle(f);
-//    //        // Calculate the average normal of vertices of face.
-//    //        Vec3f average_normal(0, 0, 0);
-//    //        do
-//    //        {
-//    //            auto v = mesh_.to_vertex_handle(he);
-//    //            auto norm_om = mesh_.normal(v).data();
-//    //            Vec3f norm{ norm_om[0], norm_om[1], norm_om[2] };
-//    //            average_normal += norm;
-//    //            he = mesh_.next_halfedge_handle(he);
-//    //        } while (he != mesh_.halfedge_handle(f));
-//    //        // Use the average normal as the whole face.
-//    //        average_normal /= 3.0f;
-//    //        he = mesh_.halfedge_handle(f);
-//    //        do
-//    //        {
-//    //            auto v = mesh_.to_vertex_handle(he);
-//    //            glNormal3fv(average_normal.data());
-//    //            glColor3f(1.0f, 1.0f, 1.0f);
-//    //            glVertex3fv(mesh_.point(v).data());
-//
-//    //            he = mesh_.next_halfedge_handle(he);
-//    //        } while (he != mesh_.halfedge_handle(f));
-//    //    }
-//    //}
-//
-//    //glEnd();
-//}
-//
-//// No Usage in this project.
-//void RenderingWidget::DrawTexture(bool bv)
-//{
-//	//if (!bv)
-//	//	return;
-//	//if (mesh_.n_vertices() == 0 || !is_load_texture_)
-//	//	return;
-// //   if (!param.has_init())
-// //   {
-// //       param.setting(_method, _boundary);
-// //       param.init();
-// //   }
-//
-//	//glBindTexture(GL_TEXTURE_2D, texture_[0]);
-//
-// //   glEnable(GL_TEXTURE_2D);
-//
-//	//glBegin(GL_TRIANGLES);
-// //   for (auto f : mesh_.faces())
-// //   {
-// //       auto he = mesh_.halfedge_handle(f);
-// //       do
-// //       {
-// //           auto v = mesh_.to_vertex_handle(he);
-// //           glTexCoord2fv(param.query(v).data());
-// //           glNormal3fv(mesh_.normal(v).data());
-// //           glVertex3fv(mesh_.point(v).data());
-//
-// //           he = mesh_.next_halfedge_handle(he);
-// //       } while (he != mesh_.halfedge_handle(f));
-// //   }
-//
-//	//glEnd();
-//}
+void RenderingWidget::OpenOneMesh()
+{
+    QString filename = QFileDialog::
+        getOpenFileName(this, tr("Read Mesh"),
+            "./mesh", tr("Mesh Files (*.obj)"));
+
+    if (filename.isEmpty())
+    {
+        emit(operatorInfo(QString("Read Mesh Failed!")));
+        return;
+    }
+
+    // 中文路径支持
+    QTextCodec *code = QTextCodec::codecForName("gd18030");
+    QTextCodec::setCodecForLocale(code);
+    QByteArray byfilename = filename.toLocal8Bit();
+
+    scene.clear();
+    scene.open_by_obj(filename);
+
+    frame = 0;
+    updateGL();
+}
+
+void RenderingWidget::Render_Axes()
+{
+    //vbo_basic_buffer_.clear();
+    //veo_basic_buffer_.clear();
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 1.0f, 0, 0 });
+
+    _push_vec(vbo_basic_buffer_, { 5, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 1.0f, 0.5f, 0 });
+
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 1.0f, 0 });
+
+    _push_vec(vbo_basic_buffer_, { 0, 5, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 1.0f, 0.5f });
+
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 0, 1.0f });
+
+    _push_vec(vbo_basic_buffer_, { 0, 0, 5 });
+    _push_vec(vbo_basic_buffer_, { 0.5f, 0, 1.0f });
+    //veo_basic_buffer_ = { 0, 3, 1, 4, 2, 5 };
+}
+
+void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
+{
+    this->slice_config_ = config;
+    scene.slice(config);
+    updateGL();
+}
+
+void RenderingWidget::Skeleton()
+{
+    if (scene.model_number() == 0)
+        return;
+    if (scene.get("Skeleton") == nullptr)
+    {
+        auto mesh_clone = *scene.get("Main");
+        SkeletonSolution ss(mesh_clone.mesh(), msg);
+        ss.skeletonize();
+        mesh_clone.color_ = { 1.0f, 0.0f, 0.0f };
+        mesh_clone.name_ = "Skeleton";
+        scene.add_model(mesh_clone);
+    }
+    else
+    {
+        auto mesh_clone = *scene.get("Skeleton");
+        scene.remove_model("Skeleton");
+        SkeletonSolution ss(mesh_clone.mesh(), msg);
+        ss.skeletonize();
+        mesh_clone.name_ = "Skeleton";
+        scene.add_model(mesh_clone);
+    }
+
+    updateGL();
+}
+
+void RenderingWidget::Render_Indication()
+{
+    if (!has_lighting_)
+        return;
+
+    // add link lines for test.
+    if (scene.get("Skeleton") != nullptr)
+    {
+        auto &mesh_wrapper = *scene.get("Main");
+
+        auto &mesh = scene.get("Main")->mesh();
+        auto &skel = scene.get("Skeleton")->mesh();
+
+        for (int vi = 0; vi < mesh.n_vertices(); ++vi)
+        {
+            auto mesh_pos = vec_cast<OpenMesh::Vec3f, Eigen::Vector3f>(mesh.point(mesh.vertex_handle(vi)));
+            auto skel_pos = vec_cast<OpenMesh::Vec3f, Eigen::Vector3f>(skel.point(skel.vertex_handle(vi)));
+
+            Eigen::Vector3f delta = skel_pos - mesh_pos;
+            delta.normalize();
+            Eigen::Vector3f target = mesh_pos + delta * 0.05;
+
+            if (!mesh_wrapper.slice_no_in_show_area(_split3(mesh_pos)))
+            {
+                _push_vec(vbo_basic_buffer_, { _split3(mesh_pos) });
+                _push_vec(vbo_basic_buffer_, { 1.0f, 1.0f, 0.0f });
+                _push_vec(vbo_basic_buffer_, { _split3(target) });
+                _push_vec(vbo_basic_buffer_, { 1.0f, 1.0f, 0.0f });
+            }
+        }
+    }
+}
+
+void RenderingWidget::Load_Skeleton()
+{
+    if (scene.model_number() == 0)
+        return;
+
+    QString filename = QFileDialog::
+        getOpenFileName(this, tr("Read Skeleton"),
+            "./mesh", tr("Mesh Files (*.obj)"));
+
+    if (filename.isEmpty())
+    {
+        emit(operatorInfo(QString("Read Mesh Failed!")));
+        return;
+    }
+
+    // 中文路径支持
+    QTextCodec *code = QTextCodec::codecForName("gd18030");
+    QTextCodec::setCodecForLocale(code);
+    QByteArray byfilename = filename.toLocal8Bit();
+    if (scene.get("Skeleton") != nullptr)
+    {
+        scene.remove_model("Skeleton");
+    }
+
+    scene.open_by_obj(filename, "Skeleton");
+
+    if (scene.get("Skeleton") != nullptr)
+    {
+        auto &mesh = *scene.get("Skeleton");
+        mesh.color_ = { 1.0f, 0.0f, 0.0f };
+        mesh.name_ = "Skeleton";
+        mesh.update();
+    }
+
+    updateGL();
+}

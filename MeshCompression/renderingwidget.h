@@ -9,6 +9,8 @@
 #include "OpenGLMesh.h"
 #include "OpenGLScene.h"
 #include "SimulatorBase.h"
+#include "meshprogram.h"
+#include "SliceConfig.h"
 
 using vec = QVector3D;
 
@@ -66,8 +68,15 @@ public slots:
     void CheckLowPoly(bool bv);
     void CheckShowResult(bool bv);
     void CheckShowDiff(bool bv);
+
+    void Skeleton();
+    void Load_Skeleton();
+    void OpenOneMesh();
+    void SliceConfigChanged(const SliceConfig &config);
     
 private:
+    void Render_Axes();
+    void Render_Indication();
 	//void DrawAxes(bool bv);
 	//void DrawPoints(bool);
 	//void DrawEdge(bool);
@@ -114,16 +123,23 @@ private:
     QTime                       last_time;
     QTime                       init_time;
     QTimer                     *timer;
-    QOpenGLShaderProgram       *shader_program_basic_phong_;
-    QOpenGLShaderProgram       *shader_program_rigid_edge_;
+    QOpenGLShaderProgram       *shader_program_phong_;
     QOpenGLBuffer              *vbo, *veo;
     QOpenGLVertexArrayObject   *vao;
+    QOpenGLShaderProgram       *shader_program_basic_;
+    QOpenGLBuffer              *vbo_basic_, *veo_basic_;
+    QOpenGLVertexArrayObject   *vao_basic_;
+    std::vector<GLfloat>        vbo_basic_buffer_;
+    //std::vector<GLuint>         veo_basic_buffer_;
+
     OpenGLCamera                camera_;
     OpenGLMesh                  test;
     OpenGLScene                 scene;
     bool                        light_dir_fix_;
     int                         frame;
     SimulatorBase              *sim;
+
+    SliceConfig                 slice_config_;
 };
 
 #endif // RENDERINGWIDGET_H

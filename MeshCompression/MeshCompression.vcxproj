@@ -106,11 +106,13 @@
     <ClCompile Include="renderingwidget.cpp" />
     <ClCompile Include="SimulatorBase.cpp" />
     <ClCompile Include="SimulatorSimpleSpring_Midpoint.cpp" />
+    <ClCompile Include="SkeletonSolution.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="TetrahedralizationSolution.cpp" />
+    <ClCompile Include="TextConfigLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ConsoleMessageManager.h" />
@@ -121,7 +123,10 @@
     <ClInclude Include="OpenMeshBasic.h" />
     <ClInclude Include="SimulatorBase.h" />
     <ClInclude Include="SimulatorSimpleSpring_Midpoint.h" />
+    <ClInclude Include="SkeletonSolution.h" />
+    <ClInclude Include="SliceConfig.h" />
     <ClInclude Include="TetrahedralizationSolution.h" />
+    <ClInclude Include="TextConfigLoader.h" />
     <CustomBuild Include="renderingwidget.h">
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Moc%27ing renderingwidget.h...</Message>
