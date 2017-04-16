@@ -998,6 +998,18 @@ void RenderingWidget::Load_Skeleton()
         mesh.update();
     }
 
+    if (scene.get("Skeleton") != nullptr)
+    {
+        auto &mesh = scene.get("Main")->mesh();
+        auto &skel = scene.get("Skeleton")->mesh();
+
+        for (int vi = 0; vi < mesh.n_vertices(); ++vi)
+        {
+            auto mesh_pos = mesh.point(mesh.vertex_handle(vi));
+            auto skel_pos = skel.point(skel.vertex_handle(vi));
+
+        }
+    }
 
     updateGL();
 }

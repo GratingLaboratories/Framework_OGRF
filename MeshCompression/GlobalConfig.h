@@ -9,7 +9,7 @@
 
 /* Render Widget Relating Configurations */
 
-#define DEFAULT_CAMERA_POSITION { 2.0f, 2.0f, 1.25f }
+#define DEFAULT_CAMERA_POSITION { 3.0f, 3.0f, 1.75f }
 
 #define FPS_LIMIT               60
 #define MINIMUN_FRAME_STEP_MS   0
