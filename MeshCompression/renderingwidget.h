@@ -76,6 +76,7 @@ public slots:
     
 private:
     void Render_Axes();
+    void Render_Indication();
 	//void DrawAxes(bool bv);
 	//void DrawPoints(bool);
 	//void DrawEdge(bool);

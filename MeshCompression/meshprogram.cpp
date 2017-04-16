@@ -157,7 +157,7 @@ void MeshProgram::CreateRenderGroup()
     connect(checkbox_face_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawFace(bool)));
     checkbox_face_->setChecked(true);
 
-    checkbox_light_ = new QCheckBox(tr("LUNUSE"), this);
+    checkbox_light_ = new QCheckBox(tr("Indication"), this);
     connect(checkbox_light_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLight(bool)));
 
     checkbox_texture_ = new QCheckBox(tr("TUNUSE"), this);
@@ -218,8 +218,8 @@ void MeshProgram::CreateRenderGroup()
     render_layout->addWidget(checkbox_dept_);
     render_layout->addWidget(checkbox_cull_);
     render_layout->addWidget(checkbox_face_);
-    render_layout->addWidget(checkbox_texture_);
     render_layout->addWidget(checkbox_light_);
+    render_layout->addWidget(checkbox_texture_);
     render_layout->addWidget(checkbox_axes_);
 
     //QVBoxLayout* option_layout = new QVBoxLayout(groupbox_option_);

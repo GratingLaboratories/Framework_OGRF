@@ -467,36 +467,38 @@ void OpenGLMesh::mesh_unify(float scale, bool centrailze, TriMesh& mesh) const
     // REMARK: OpenMesh::Vec3f has conflict with Vec3f;
 }
 
+#define DELTA 1.0e-6
+
 bool OpenGLMesh::slice_no_in_show_area(float x, float y, float z)
 {
     if (slice_config_.revX)
     {
-        if (x > min_point.x() + slice_config_.sliceX * scale_x)
+        if (x > min_point.x() + slice_config_.sliceX * scale_x + DELTA)
             return true;
     }
     else
     {
-        if (x < min_point.x() + slice_config_.sliceX * scale_x)
+        if (x < min_point.x() + slice_config_.sliceX * scale_x - DELTA)
             return true;
     }
     if (slice_config_.revY)
     {
-        if (y > min_point.y() + slice_config_.sliceY * scale_y)
+        if (y > min_point.y() + slice_config_.sliceY * scale_y + DELTA)
             return true;
     }
     else
     {
-        if (y < min_point.y() + slice_config_.sliceY * scale_y)
+        if (y < min_point.y() + slice_config_.sliceY * scale_y - DELTA)
             return true;
     }
     if (slice_config_.revZ)
     {
-        if (z > min_point.z() + slice_config_.sliceZ * scale_z)
+        if (z > min_point.z() + slice_config_.sliceZ * scale_z + DELTA)
             return true;
     }
     else
     {
-        if (z < min_point.z() + slice_config_.sliceZ * scale_z)
+        if (z < min_point.z() + slice_config_.sliceZ * scale_z - DELTA)
             return true;
     }
 

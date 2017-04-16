@@ -64,6 +64,7 @@ public:
     void tag_change();
     void set_point(int idx, QVector3D p);
     void slice(const SliceConfig &slice_config);
+    bool slice_no_in_show_area(float x, float y, float z);
     TriMesh &mesh() { return mesh_; }
     TetraMesh &tmesh() { return tetra_; }
     bool changed(); 
@@ -100,7 +101,6 @@ private:
     float get_sacle();
     void mesh_unify(float scale = 1.0, bool centrailze = false);
     void mesh_unify(float scale, bool centrailze, TriMesh &mesh) const;
-    bool slice_no_in_show_area(float x, float y, float z);
 
     void ReadTetra(const QString &name);
     TetraMesh tetra_;
