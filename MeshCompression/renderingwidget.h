@@ -130,8 +130,7 @@ private:
     QOpenGLBuffer              *vbo_basic_, *veo_basic_;
     QOpenGLVertexArrayObject   *vao_basic_;
     std::vector<GLfloat>        vbo_basic_buffer_;
-    std::vector<GLuint>         veo_basic_buffer_;
-    //bool                        basic_shader_changed   
+    //std::vector<GLuint>         veo_basic_buffer_;
 
     OpenGLCamera                camera_;
     OpenGLMesh                  test;
