@@ -62,6 +62,7 @@ private:
     /// NO NEED TO MERGE THESE CHANGE
     QAction                         *action_open_mesh;
     QAction                         *action_get_skeleton;
+    QAction                         *action_load_skeleton;
     QAction                         *action_open_clear;
 
     // Render CheckBoxs

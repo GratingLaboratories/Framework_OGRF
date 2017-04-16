@@ -82,8 +82,8 @@ void SkeletonSolution::Basic_Prepare_and_Calculate_Laplacian(vector<T> &tv_Lap)
             int vleft = neighbors[vi][MOD(j + 1, degree)];
             int vright = neighbors[vi][MOD(j - 1, degree)];
             auto weight = _cotangent_for_angle_AOB(vi, vleft, vj) + _cotangent_for_angle_AOB(vi, vright, vj);
-            if (weight < 0.0f)
-                weight = 0.0f;
+            /*if (weight < 0.0f)
+                weight = 0.0f;*/
             weight_sum += weight;
             tv_Lap.push_back(T{ vi, vj, weight });
         }

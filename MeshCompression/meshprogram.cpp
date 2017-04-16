@@ -58,7 +58,7 @@ void MeshProgram::CreateActions()
     action_open_->setStatusTip(tr("Open an existing file"));
     connect(action_open_, SIGNAL(triggered()), renderingwidget_, SLOT(ReadScene()));
 
-    action_save_ = new QAction(QIcon(":/MeshCompression/Resources/images/save.png"), tr("&Save"), this);
+    action_save_ = new QAction(QIcon(":/MainWindow/save.png"), tr("&Save"), this);
     action_save_->setShortcuts(QKeySequence::Save);
     action_save_->setStatusTip(tr("Save the document to disk"));
     connect(action_save_, SIGNAL(triggered()), renderingwidget_, SLOT(WriteMesh()));
@@ -91,6 +91,9 @@ void MeshProgram::CreateActions()
     action_get_skeleton = new QAction(tr("[&Skeleton]"));
     connect(action_get_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Skeleton()));
 
+    action_load_skeleton= new QAction(tr("[&Load Skeleton]"));
+    connect(action_load_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Load_Skeleton()));
+
     // action_open_clear;
 }
 
@@ -113,10 +116,11 @@ void MeshProgram::CreateToolBars()
 
     toolbar_basic_ = addToolBar(tr("Basic"));
     toolbar_basic_->addAction(action_loadmesh_);
-    //toolbar_basic_->addAction(action_loadtexture_);
+    toolbar_basic_->addAction(action_save_);
     toolbar_basic_->addAction(action_background_);
     toolbar_basic_->addAction(action_open_mesh);
     toolbar_basic_->addAction(action_get_skeleton);
+    toolbar_basic_->addAction(action_load_skeleton);
     //toolbar_basic_->addAction(action_convert_);
     //toolbar_basic_->addAction(action_param_);
 }

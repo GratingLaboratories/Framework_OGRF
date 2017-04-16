@@ -17,7 +17,8 @@ public:
     OpenGLScene(ConsoleMessageManager &msg) : msg_(msg) {  }
     void clear();
     bool open(const QString &name);
-    bool open_by_obj(const QString &name);
+    bool open_by_obj(const QString &file);
+    bool open_by_obj(const QString &file, const QString &name);
     void add_model(OpenGLMesh &mesh);
     void remove_model(const QString &name);
     bool changed();

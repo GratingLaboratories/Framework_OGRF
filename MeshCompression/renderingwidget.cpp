@@ -26,6 +26,13 @@
 typedef QVector3D  Vec3f;
 using Vec3f_om = OpenMesh::Vec3f;
 
+inline void _push_vec(std::vector<GLfloat> &v, const OpenMesh::Vec3f &data)
+{
+    v.push_back(data[0]);
+    v.push_back(data[1]);
+    v.push_back(data[2]);
+}
+
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     QOpenGLWidget(parent),
     ptr_mainwindow_(mainwindow),
@@ -88,8 +95,6 @@ void RenderingWidget::initializeGL()
 
     QString vertexShaderFileName{ "shader/BasicPhongVertexShader.vertexshader" };
     QString fragmentShaderFileName{ "shader/BasicPhongFragmentShader.fragmentshader" };
-    /*QString vertexShaderFileName_Rigid{ "shader/PureColorVertexShader.vertexshader" };
-    QString fragmentShaderFileName_Rigid{ "shader/PureColorFragmentShader.fragmentshader" };*/
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
@@ -104,15 +109,9 @@ void RenderingWidget::initializeGL()
     QString fragmentShaderSource{ tsf.readAll() };
     fragmentShaderFile.close();
 
-    shader_program_basic_phong_ = new QOpenGLShaderProgram(this);
-    shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    shader_program_basic_phong_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-    //shader_program_basic_phong_->link();
-
-    //shader_program_rigid_edge_ = new QOpenGLShaderProgram(this);
-    //shader_program_rigid_edge_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
-    //shader_program_rigid_edge_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
-
+    shader_program_phong_ = new QOpenGLShaderProgram(this);
+    shader_program_phong_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource);
+    shader_program_phong_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource);
 
     vao = new QOpenGLVertexArrayObject();
     vao->create();
@@ -131,14 +130,61 @@ void RenderingWidget::initializeGL()
         veo->create();
         veo->bind();
 
-        shader_program_basic_phong_->enableAttributeArray(0);
-        shader_program_basic_phong_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 9 * sizeof(GLfloat));
-        shader_program_basic_phong_->enableAttributeArray(1);
-        shader_program_basic_phong_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
-        shader_program_basic_phong_->enableAttributeArray(2);
-        shader_program_basic_phong_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+        shader_program_phong_->enableAttributeArray(0);
+        shader_program_phong_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 9 * sizeof(GLfloat));
+        shader_program_phong_->enableAttributeArray(1);
+        shader_program_phong_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+        shader_program_phong_->enableAttributeArray(2);
+        shader_program_phong_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
     }
     vao->release();
+
+    // Basic Pure Color Shader
+    QString vertexShaderFileName_Basic{ "shader/PureColorVertexShader.vertexshader" };
+    QString fragmentShaderFileName_Basic{ "shader/PureColorFragmentShader.fragmentshader" };
+
+    // Read shader source code from files.
+    QFile vertexShaderFile_Basic{ vertexShaderFileName_Basic };
+    vertexShaderFile_Basic.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsvb{ &vertexShaderFile_Basic };
+    QString vertexShaderSource_Basic{ tsvb.readAll() };
+    vertexShaderFile_Basic.close();
+
+    QFile fragmentShaderFile_Basic{ fragmentShaderFileName_Basic };
+    fragmentShaderFile_Basic.open(QFile::ReadOnly | QFile::Text);
+    QTextStream tsfb{ &fragmentShaderFile_Basic };
+    QString fragmentShaderSource_Basic{ tsfb.readAll() };
+    fragmentShaderFile_Basic.close();
+
+    shader_program_basic_ = new QOpenGLShaderProgram(this);
+    shader_program_basic_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource_Basic);
+    shader_program_basic_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_Basic);
+
+    vao_basic_ = new QOpenGLVertexArrayObject();
+    vao_basic_->create();
+
+    vao_basic_->bind();
+    {
+        // vertex buffer.
+        vbo_basic_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+        vbo_basic_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+        vbo_basic_->create();
+        vbo_basic_->bind();
+
+        // element index buffer
+        veo_basic_ = new QOpenGLBuffer(QOpenGLBuffer::IndexBuffer);
+        veo_basic_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+        veo_basic_->create();
+        veo_basic_->bind();
+
+        shader_program_basic_->enableAttributeArray(0);
+        shader_program_basic_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 6 * sizeof(GLfloat));
+        shader_program_basic_->enableAttributeArray(1);
+        shader_program_basic_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
+        // shader_program_basic_->enableAttributeArray(2);
+        // shader_program_basic_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
+    }
+    vao_basic_->release();
 
     camera_ = OpenGLCamera(DEFAULT_CAMERA_POSITION, { 0.0f, 0.0f, 0.0f });
 }
@@ -190,45 +236,68 @@ void RenderingWidget::paintGL()
         vao->release();        
     }
 
-    shader_program_basic_phong_->bind();
+    QMatrix4x4 mat_model; 
+            
+    QMatrix4x4 mat_projection;
+    mat_projection.perspective(45.0f,
+        float(this->width()) / float(this->height()),
+        0.1f, 100.f);
+
+    shader_program_phong_->bind();
     {
         vao->bind();
         {
-            QMatrix4x4 mat_model; 
-            
-            QMatrix4x4 mat_projection;
-            mat_projection.perspective(45.0f,
-                float(this->width()) / float(this->height()),
-                0.1f, 100.f);
-
-            shader_program_basic_phong_->setUniformValue("model", mat_model);
-            shader_program_basic_phong_->setUniformValue("view", camera_.view_mat());
-            shader_program_basic_phong_->setUniformValue("projection", mat_projection);
+            shader_program_phong_->setUniformValue("model", mat_model);
+            shader_program_phong_->setUniformValue("view", camera_.view_mat());
+            shader_program_phong_->setUniformValue("projection", mat_projection);
             if (light_dir_fix_)
-                shader_program_basic_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
+                shader_program_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
             else
-                shader_program_basic_phong_->setUniformValue("lightDirFrom", camera_.direction());
-            shader_program_basic_phong_->setUniformValue("viewPos", camera_.position());
+                shader_program_phong_->setUniformValue("lightDirFrom", camera_.direction());
+            shader_program_phong_->setUniformValue("viewPos", camera_.position());
 
             glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
         }
         vao->release();
     }
+    shader_program_phong_->release();
 
-    // TODO
-    //glLineWidth(2.5);
-    glColor3f(1.0, 0.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(10.0, 0.0, 0.0);
-    glEnd();
-    glColor3f(0.0, 1.0, 0.0);
-    glBegin(GL_LINES);
-    glVertex3f(0.0, 0.0, 0.0);
-    glVertex3f(0.0, 10.0, 0.0);
-    glEnd();
+    Render_Axes();
 
-    shader_program_basic_phong_->release();
+    vao_basic_->bind();
+        vbo_basic_->bind();
+            vbo_basic_->allocate(vbo_basic_buffer_.data(), vbo_basic_buffer_.size() * sizeof(GLfloat));
+            veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
+        vbo_basic_->release();
+    vao_basic_->release();
+
+    shader_program_basic_->bind();
+    {
+        vao_basic_->bind();
+        {
+            shader_program_basic_->setUniformValue("model", mat_model);
+            shader_program_basic_->setUniformValue("view", camera_.view_mat());
+            shader_program_basic_->setUniformValue("projection", mat_projection);
+
+            glDrawElements(GL_LINES, veo_basic_buffer_.size(), GL_UNSIGNED_INT, (GLvoid *)0);
+        }
+        vao_basic_->release();
+    }
+    shader_program_basic_->release();
+
+    //// TODO
+    ////glLineWidth(2.5);
+    //glColor3f(1.0, 0.0, 0.0);
+    //glBegin(GL_LINES);
+    //glVertex3f(0.0, 0.0, 0.0);
+    //glVertex3f(10.0, 0.0, 0.0);
+    //glEnd();
+    //glColor3f(0.0, 1.0, 0.0);
+    //glBegin(GL_LINES);
+    //glVertex3f(0.0, 0.0, 0.0);
+    //glVertex3f(0.0, 10.0, 0.0);
+    //glEnd();
+
 
     // Restore Polygon Mode to ensure the correctness of native painter
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -621,29 +690,31 @@ void RenderingWidget::ReadScene()
 
 void RenderingWidget::WriteMesh()
 {
-	//if (mesh_.n_vertices() == 0)
-	//{
-	//	emit(QString("The Mesh is Empty !"));
-	//	return;
-	//}
-	//QString filename = QFileDialog::
-	//	getSaveFileName(this, tr("Write Mesh"),
-	//	"..", tr("Meshes (*.obj)"));
+    auto &mesh = scene.get("Main")->mesh();
+    mesh_unify(mesh);
+	if (scene.model_number() == 0 || mesh.n_vertices() == 0)
+	{
+		emit(QString("The Mesh is Empty !"));
+		return;
+	}
+	QString filename = QFileDialog::
+		getSaveFileName(this, tr("Write Mesh"),
+		"..", tr("Meshes (*.obj)"));
 
-	//if (filename.isEmpty())
-	//	return;
+	if (filename.isEmpty())
+		return;
 
- //   // 中文路径支持
- //   QTextCodec *code = QTextCodec::codecForName("gd18030");
- //   QTextCodec::setCodecForLocale(code);
- //   QByteArray byfilename = filename.toLocal8Bit();
- //   if (!OpenMesh::IO::write_mesh(mesh_, byfilename.data()))
- //   {
- //       std::cerr << "Cannot write mesh file." << std::endl;
- //       exit(0xA1);
- //   }
+    // 中文路径支持
+    QTextCodec *code = QTextCodec::codecForName("gd18030");
+    QTextCodec::setCodecForLocale(code);
+    QByteArray byfilename = filename.toLocal8Bit();
+    if (!OpenMesh::IO::write_mesh(mesh, byfilename.data()))
+    {
+        std::cerr << "Cannot write mesh file." << std::endl;
+        exit(0xA1);
+    }
 
-	//emit(operatorInfo(QString("Write Mesh to ") + filename + QString(" Done")));
+	emit(operatorInfo(QString("Write Mesh to ") + filename + QString(" Done")));
 }
 
 void RenderingWidget::LoadTexture()
@@ -841,6 +912,25 @@ void RenderingWidget::OpenOneMesh()
     updateGL();
 }
 
+void RenderingWidget::Render_Axes()
+{
+    vbo_basic_buffer_.clear();
+    veo_basic_buffer_.clear();
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 1.0f, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 1.0f, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 0, 1.0f });
+    _push_vec(vbo_basic_buffer_, { 5, 0, 0 });
+    _push_vec(vbo_basic_buffer_, { 1.0f, 0.5f, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 5, 0 });
+    _push_vec(vbo_basic_buffer_, { 0, 1.0f, 0.5f });
+    _push_vec(vbo_basic_buffer_, { 0, 0, 5 });
+    _push_vec(vbo_basic_buffer_, { 0.5f, 0, 1.0f });
+    veo_basic_buffer_ = { 0, 3, 1, 4, 2, 5 };
+}
+
 void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
 {
     this->slice_config_ = config;
@@ -852,15 +942,65 @@ void RenderingWidget::Skeleton()
 {
     if (scene.model_number() == 0)
         return;
+    if (scene.get("Skeleton") == nullptr)
+    {
+        auto mesh_clone = *scene.get("Main");
+        SkeletonSolution ss(mesh_clone.mesh(), msg);
+        ss.skeletonize();
+        mesh_clone.color_ = { 1.0f, 0.0f, 0.0f };
+        mesh_clone.name_ = "Skeleton";
+        scene.add_model(mesh_clone);
+    }
+    else
+    {
+        auto mesh_clone = *scene.get("Skeleton");
+        scene.remove_model("Skeleton");
+        SkeletonSolution ss(mesh_clone.mesh(), msg);
+        ss.skeletonize();
+        mesh_clone.name_ = "Skeleton";
+        scene.add_model(mesh_clone);
+    }
 
-    auto mesh_clone = *scene.get("Main");
-    SkeletonSolution ss(mesh_clone.mesh(), msg);
-    ss.skeletonize();
-    mesh_clone.color_ = { 1.0f, 0.0f, 0.0f };
-    scene.add_model(mesh_clone);
     updateGL();
 }
 
+void RenderingWidget::Load_Skeleton()
+{
+    if (scene.model_number() == 0)
+        return;
+
+    QString filename = QFileDialog::
+        getOpenFileName(this, tr("Read Skeleton"),
+            "./mesh", tr("Mesh Files (*.obj)"));
+
+    if (filename.isEmpty())
+    {
+        emit(operatorInfo(QString("Read Mesh Failed!")));
+        return;
+    }
+
+    // 中文路径支持
+    QTextCodec *code = QTextCodec::codecForName("gd18030");
+    QTextCodec::setCodecForLocale(code);
+    QByteArray byfilename = filename.toLocal8Bit();
+    if (scene.get("Skeleton") != nullptr)
+    {
+        scene.remove_model("Skeleton");
+    }
+
+    scene.open_by_obj(filename, "Skeleton");
+
+    if (scene.get("Skeleton") != nullptr)
+    {
+        auto &mesh = *scene.get("Skeleton");
+        mesh.color_ = { 1.0f, 0.0f, 0.0f };
+        mesh.name_ = "Skeleton";
+        mesh.update();
+    }
+
+
+    updateGL();
+}
 
 //void RenderingWidget::DrawAxes(bool bV)
 //{
