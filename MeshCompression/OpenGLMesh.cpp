@@ -14,6 +14,12 @@ bool _FileExists(QString path) {
     return check_file.exists() && check_file.isFile();
 }
 
+// (x, y, z) -> (-x, z, y)
+Vec3f trans_coord(Vec3f &p)
+{
+    return{ -p[0], p[2], p[1] };
+}
+
 void OpenGLMesh::init()
 {
     mesh_.request_vertex_normals();
@@ -24,7 +30,6 @@ void OpenGLMesh::init()
     {
         std::cerr << "Error loading mesh_ from file " << mesh_file_name.toStdString() << std::endl;
     }
-
     // try find tetrahedralization.
     QString tetra_name = file_location_ + "tetra/" + file_name_;
     if (!_FileExists(tetra_name + TETRA_ELE_EXTENSION) && NEED_TETRA)
@@ -33,6 +38,12 @@ void OpenGLMesh::init()
         mesh_unify(1.0, true, temp_mesh); // unify to 1.0 before tetra().
         TetrahedralizationSolution ts{ temp_mesh, (tetra_name).toStdString() };
         ts.tetra();
+    }
+
+    if (mesh_file_name.contains("coodtr"))
+    {
+        for (auto vh : mesh_.vertices())
+            mesh_.point(vh) = trans_coord(mesh_.point(vh));
     }
 
     if (need_scale_)
@@ -113,7 +124,6 @@ OpenGLMesh::OpenGLMesh(const OpenGLMesh& rhs)
     changed_ = rhs.changed_;
     mesh_ = rhs.mesh_;
     tetra_ = rhs.tetra_;
-    slice_config_ = rhs.slice_config_;
 }
 
 OpenGLMesh::~OpenGLMesh()
@@ -139,13 +149,6 @@ inline void _push_vec(std::vector<GLfloat> &v, GLfloat a, GLfloat b, GLfloat c)
     v.push_back(a);
     v.push_back(b);
     v.push_back(c);
-}
-
-// unused.
-// dir, right, up -> x, y, z in common coordinates sys
-Vec3f trans_coord(Vec3f &p)
-{
-    return{ p[2], p[0], p[1] };
 }
 
 void OpenGLMesh::update()

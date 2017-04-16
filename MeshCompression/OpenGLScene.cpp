@@ -7,6 +7,7 @@ void OpenGLScene::clear()
     vbuffer.clear();
     ebuffer.clear();
     models_.clear();
+    ref_mesh_from_name_.clear();
 }
 
 bool OpenGLScene::open(const QString& name)
@@ -67,9 +68,9 @@ bool OpenGLScene::open_by_obj(const QString& name)
     //map_name_tag_set_[model->name_] = QStringSet{};
     model->position_ = { 0.0, 0.0 ,0.0 };
     model->color_ = { 1.0, 1.0 ,1.0 };
-    model->need_scale_ = true;
+    model->need_scale_ = false;
     model->scale_ = 1.0;
-    model->need_centralize_ = true;
+    model->need_centralize_ = false;
     model->use_face_normal_ = false;
     model->show_tetra_ = false;
     model->file_location_ = "";
@@ -80,7 +81,35 @@ bool OpenGLScene::open_by_obj(const QString& name)
     model->init();
     ref_mesh_from_name_[model->name_] = model;
 
-    msg_.log("Read Complete.", INFO_MSG);
+    msg_.log("Read Complete.", model->name_, INFO_MSG);
+
+    return true;
+}
+
+bool OpenGLScene::open_by_obj(const QString& file, const QString& name)
+{
+    msg_.reset_indent();
+    msg_.log("Read OBJ from file ", file, INFO_MSG);
+
+    models_.push_back(std::make_shared<OpenGLMesh>());
+    auto model = models_.back();
+    model->name_ = name;
+    model->position_ = { 0.0, 0.0 ,0.0 };
+    model->color_ = { 1.0, 1.0 ,1.0 };
+    model->need_scale_ = false;
+    model->scale_ = 1.0;
+    model->need_centralize_ = false;
+    model->use_face_normal_ = false;
+    model->show_tetra_ = false;
+    model->file_location_ = "";
+    model->file_name_ = file;
+    model->mesh_extension_ = "";
+    model->slice(slice_config_);
+
+    model->init();
+    ref_mesh_from_name_[model->name_] = model;
+
+    msg_.log("Read Complete.", model->name_, INFO_MSG);
 
     return true;
 }
@@ -91,6 +120,20 @@ void OpenGLScene::add_model(OpenGLMesh& mesh)
     auto &model = *models_.back();
     model = mesh;
     model.update();
+    ref_mesh_from_name_[model.name_] = std::make_shared<OpenGLMesh>(model);
+}
+
+void OpenGLScene::remove_model(const QString& name)
+{
+    for (auto m_iter = models_.begin(); m_iter != models_.end(); ++m_iter)
+    {
+        if ((*m_iter)->name_ == name)
+        {
+            models_.erase(m_iter);
+            ref_mesh_from_name_.erase(name);
+            break;
+        }
+    }
 }
 
 OpenGLScene::~OpenGLScene()
