@@ -269,8 +269,10 @@ void RenderingWidget::paintGL()
         vao->release();
     }
     shader_program_phong_->release();
-
     shader_program_basic_->bind();
+
+    veo_basic_buffer_.clear();
+    vbo_basic_buffer_.clear();
     Render_Indication();
     Render_Axes();
     //printf("%lld\n", vbo_basic_buffer_.size());
@@ -278,10 +280,9 @@ void RenderingWidget::paintGL()
     vao_basic_->bind();
         vbo_basic_->bind();
             vbo_basic_->allocate(vbo_basic_buffer_.data(), vbo_basic_buffer_.size() * sizeof(GLfloat));
-            //veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
+            veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
         vbo_basic_->release();
     vao_basic_->release();
-    vbo_basic_buffer_.clear();
 
     {
         vao_basic_->bind();
@@ -290,7 +291,7 @@ void RenderingWidget::paintGL()
             shader_program_basic_->setUniformValue("view", camera_.view_mat());
             shader_program_basic_->setUniformValue("projection", mat_projection);
 
-            glDrawArrays(GL_LINES, 0, vbo_basic_buffer_.size());
+            glDrawElements(GL_LINES, veo_basic_buffer_.size(), GL_UNSIGNED_INT, (GLvoid *)0);
         }
         vao_basic_->release();
     }
@@ -805,6 +806,8 @@ void RenderingWidget::Render_Axes()
 {
     //vbo_basic_buffer_.clear();
     //veo_basic_buffer_.clear();
+    int index = vbo_basic_buffer_.size() / 6;
+
     _push_vec(vbo_basic_buffer_, { 0, 0, 0 });
     _push_vec(vbo_basic_buffer_, { 1.0f, 0, 0 });
 
@@ -822,7 +825,13 @@ void RenderingWidget::Render_Axes()
 
     _push_vec(vbo_basic_buffer_, { 0, 0, 5 });
     _push_vec(vbo_basic_buffer_, { 0.5f, 0, 1.0f });
-    //veo_basic_buffer_ = { 0, 3, 1, 4, 2, 5 };
+
+    veo_basic_buffer_.push_back(index * 2);
+    veo_basic_buffer_.push_back(index * 2 + 1);
+    veo_basic_buffer_.push_back(index * 2 + 2);
+    veo_basic_buffer_.push_back(index * 2 + 3);
+    veo_basic_buffer_.push_back(index * 2 + 4);
+    veo_basic_buffer_.push_back(index * 2 + 5);
 }
 
 void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
@@ -882,10 +891,13 @@ void RenderingWidget::Render_Indication()
 
             if (!mesh_wrapper.slice_no_in_show_area(_split3(mesh_pos)))
             {
+                int index = vbo_basic_buffer_.size() / 6;
                 _push_vec(vbo_basic_buffer_, { _split3(mesh_pos) });
                 _push_vec(vbo_basic_buffer_, { 1.0f, 1.0f, 0.0f });
                 _push_vec(vbo_basic_buffer_, { _split3(target) });
                 _push_vec(vbo_basic_buffer_, { 1.0f, 1.0f, 0.0f });
+                veo_basic_buffer_.push_back(index * 2);
+                veo_basic_buffer_.push_back(index * 2 + 1);
             }
         }
     }
