@@ -269,8 +269,9 @@ void RenderingWidget::paintGL()
         vao->release();
     }
     shader_program_phong_->release();
-
     shader_program_basic_->bind();
+
+    vbo_basic_buffer_.clear();
     Render_Indication();
     Render_Axes();
     //printf("%lld\n", vbo_basic_buffer_.size());
@@ -281,7 +282,6 @@ void RenderingWidget::paintGL()
             //veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
         vbo_basic_->release();
     vao_basic_->release();
-    vbo_basic_buffer_.clear();
 
     {
         vao_basic_->bind();
@@ -290,7 +290,7 @@ void RenderingWidget::paintGL()
             shader_program_basic_->setUniformValue("view", camera_.view_mat());
             shader_program_basic_->setUniformValue("projection", mat_projection);
 
-            glDrawArrays(GL_LINES, 0, vbo_basic_buffer_.size());
+            glDrawArrays(GL_LINES, 0, vbo_basic_buffer_.size() / 6);
         }
         vao_basic_->release();
     }
