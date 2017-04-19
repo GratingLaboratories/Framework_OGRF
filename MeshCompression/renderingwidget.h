@@ -71,8 +71,10 @@ public slots:
 
     void Skeleton();
     void Load_Skeleton();
+    void Load_Skeleton(const QString &filename);
     void Main_Solution();
     void OpenOneMesh();
+    void OpenOneMesh(const QString &filename);
     void SliceConfigChanged(const SliceConfig &config);
     
 private:

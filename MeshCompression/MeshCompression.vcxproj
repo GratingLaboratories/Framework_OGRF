@@ -99,6 +99,7 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="meshprogram.cpp" />
+    <ClCompile Include="OffsetSolution.cpp" />
     <ClCompile Include="OpenGLCamera.cpp" />
     <ClCompile Include="OpenGLMesh.cpp" />
     <ClCompile Include="OpenGLScene.cpp" />
@@ -120,6 +121,7 @@
     <ClInclude Include="GlobalConfig.h" />
     <ClInclude Include="globalFunctions.h" />
     <ClInclude Include="HE_mesh\Vec.h" />
+    <ClInclude Include="OffsetSolution.h" />
     <ClInclude Include="OpenMeshBasic.h" />
     <ClInclude Include="SimulatorBase.h" />
     <ClInclude Include="SimulatorSimpleSpring_Midpoint.h" />
