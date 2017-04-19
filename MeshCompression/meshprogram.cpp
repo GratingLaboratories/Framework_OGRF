@@ -97,7 +97,6 @@ void MeshProgram::CreateActions()
     action_main_solution = new QAction(tr("[&Main Solution]"));
     connect(action_main_solution, SIGNAL(triggered()), renderingwidget_, SLOT(Main_Solution()));
 
-
     // action_open_clear;
 }
 
@@ -125,6 +124,7 @@ void MeshProgram::CreateToolBars()
     toolbar_basic_->addAction(action_open_mesh);
     toolbar_basic_->addAction(action_get_skeleton);
     toolbar_basic_->addAction(action_load_skeleton);
+    toolbar_basic_->addAction(action_main_solution);
     //toolbar_basic_->addAction(action_convert_);
     //toolbar_basic_->addAction(action_param_);
 }
