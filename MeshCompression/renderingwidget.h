@@ -71,6 +71,7 @@ public slots:
 
     void Skeleton();
     void Load_Skeleton();
+    void Main_Solution();
     void OpenOneMesh();
     void SliceConfigChanged(const SliceConfig &config);
     
@@ -130,6 +131,7 @@ private:
     QOpenGLBuffer              *vbo_basic_, *veo_basic_;
     QOpenGLVertexArrayObject   *vao_basic_;
     std::vector<GLfloat>        vbo_basic_buffer_;
+    bool                        basic_buffer_changed;
     //std::vector<GLuint>         veo_basic_buffer_;
 
     OpenGLCamera                camera_;

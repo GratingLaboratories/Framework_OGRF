@@ -61,7 +61,8 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     fps(0),
     scene(msg),
     light_dir_fix_(false),
-    sim(nullptr)
+    sim(nullptr),
+    basic_buffer_changed(true)
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
@@ -271,10 +272,13 @@ void RenderingWidget::paintGL()
     shader_program_phong_->release();
     shader_program_basic_->bind();
 
-    vbo_basic_buffer_.clear();
-    Render_Indication();
-    Render_Axes();
-    //printf("%lld\n", vbo_basic_buffer_.size());
+    if (basic_buffer_changed)
+    {
+        vbo_basic_buffer_.clear();
+        Render_Indication();
+        Render_Axes();       
+        basic_buffer_changed = false;
+    }
 
     vao_basic_->bind();
         vbo_basic_->bind();
@@ -682,6 +686,7 @@ void RenderingWidget::ReadScene()
     //sim->init(0.0f);
 
     frame = 0;
+    basic_buffer_changed = true;
 	updateGL();
 }
 
@@ -726,22 +731,26 @@ void RenderingWidget::ControlLineEvent(const QString &cmd_text)
 void RenderingWidget::CheckDrawPoint(bool bv)
 {
 	is_draw_point_ = bv;
-	updateGL();
+    basic_buffer_changed = true;
+    updateGL();
 }
 void RenderingWidget::CheckDrawEdge(bool bv)
 {
 	is_draw_edge_ = bv;
-	updateGL();
+    basic_buffer_changed = true;
+    updateGL();
 }
 void RenderingWidget::CheckDrawFace(bool bv)
 {
 	is_draw_face_ = bv;
-	updateGL();
+    basic_buffer_changed = true;
+    updateGL();
 }
 void RenderingWidget::CheckLight(bool bv)
 {
 	has_lighting_ = bv;
-	updateGL();
+    basic_buffer_changed = true;
+    updateGL();
 }
 void RenderingWidget::CheckDrawTexture(bool bv)
 {
@@ -751,29 +760,34 @@ void RenderingWidget::CheckDrawTexture(bool bv)
 	else
 		glDisable(GL_TEXTURE_2D);
 
-	updateGL();
+    basic_buffer_changed = true;
+    updateGL();
 }
 void RenderingWidget::CheckDrawAxes(bool bV)
 {
 	is_draw_axes_ = bV;
-	updateGL();
+    basic_buffer_changed = true;
+    updateGL();
 }
 
 void RenderingWidget::CheckLowPoly(bool bv)
 {
     is_low_poly_ = bv;
+    basic_buffer_changed = true;
     updateGL();
 }
 
 void RenderingWidget::CheckShowResult(bool bv)
 {
     is_show_result_ = bv;
+    basic_buffer_changed = true;
     updateGL();
 }
 
 void RenderingWidget::CheckShowDiff(bool bv)
 {
     is_show_diff_ = bv;
+    basic_buffer_changed = true;
     updateGL();
 }
 
@@ -798,6 +812,7 @@ void RenderingWidget::OpenOneMesh()
     scene.open_by_obj(filename);
 
     frame = 0;
+    basic_buffer_changed = true;
     updateGL();
 }
 
@@ -829,6 +844,7 @@ void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
 {
     this->slice_config_ = config;
     scene.slice(config);
+    basic_buffer_changed = true;
     updateGL();
 }
 
@@ -855,6 +871,7 @@ void RenderingWidget::Skeleton()
         scene.add_model(mesh_clone);
     }
 
+    basic_buffer_changed = true;
     updateGL();
 }
 
@@ -925,5 +942,12 @@ void RenderingWidget::Load_Skeleton()
         mesh.update();
     }
 
+    basic_buffer_changed = true;
     updateGL();
+}
+
+void RenderingWidget::Main_Solution()
+{
+
+    basic_buffer_changed = true;
 }

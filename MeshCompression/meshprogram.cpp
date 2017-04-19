@@ -91,8 +91,12 @@ void MeshProgram::CreateActions()
     action_get_skeleton = new QAction(tr("[&Skeleton]"));
     connect(action_get_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Skeleton()));
 
-    action_load_skeleton= new QAction(tr("[&Load Skeleton]"));
+    action_load_skeleton = new QAction(tr("[&Load Skeleton]"));
     connect(action_load_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Load_Skeleton()));
+
+    action_main_solution = new QAction(tr("[&Main Solution]"));
+    connect(action_main_solution, SIGNAL(triggered()), renderingwidget_, SLOT(Main_Solution()));
+
 
     // action_open_clear;
 }

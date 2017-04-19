@@ -63,6 +63,7 @@ private:
     QAction                         *action_open_mesh;
     QAction                         *action_get_skeleton;
     QAction                         *action_load_skeleton;
+    QAction                         *action_main_solution;
     QAction                         *action_open_clear;
 
     // Render CheckBoxs
