@@ -19,7 +19,7 @@ using T = Eigen::Triplet<float>;
 class OffsetSolution
 {
 public:
-    OffsetSolution(OpenGLScene &scene, ConsoleMessageManager &msg) : 
+    OffsetSolution(OpenGLScene &scene, ConsoleMessageManager &msg) :
         msg_(msg), scene_(scene), tcl_{ "./config/offset.config" } {  }
     ~OffsetSolution();
     void offset();
@@ -36,6 +36,7 @@ private:
 
     vector<Vector3f>        positions;
     vector<Vector3f>        offset_vector;
+    vector<float>           offset_bounds;
     vector<vector<bool>>    adjacency;
     vector<int>             degrees;
     vector<vector<int>>     neighbors;

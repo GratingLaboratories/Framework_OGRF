@@ -102,6 +102,7 @@ void OffsetSolution::Basic_Prepare_and_Calculate_Laplacian(vector<T> &tv_Lap)
     degrees = vector<int>(n_vertices, 0);
     neighbors = vector<vector<int>>(n_vertices);
     offset_vector = vector<Vector3f>(n_vertices, {0, 0, 0});
+    offset_bounds = vector<float>(n_vertices, 0.0f);
     for (auto vh : mesh_.vertices())
     {
         auto index_main = vh.idx();
@@ -137,9 +138,9 @@ void OffsetSolution::Basic_Prepare_and_Calculate_Laplacian(vector<T> &tv_Lap)
     }
 }
 
+// Calculate the offset vectors and the bounds.
 void OffsetSolution::Calculate_OffsetVector()
 {
-    //auto &mesh = scene_.get("Main")->mesh();
     auto &mesh = scene_.get("Main")->mesh();
     auto &skel = scene_.get("Skeleton")->mesh();
 
@@ -149,21 +150,23 @@ void OffsetSolution::Calculate_OffsetVector()
         auto skel_pos = vec_cast<OpenMesh::Vec3f, Eigen::Vector3f>(skel.point(skel.vertex_handle(vi)));
 
         Eigen::Vector3f delta = skel_pos - mesh_pos;
+        float length = delta.norm();
         delta.normalize();
 
         offset_vector[vi] = delta;
+        offset_bounds[vi] = length;
     }
 }
 
 void OffsetSolution::Input_Variables_to_Engine(Engine* ep)
 {
     // scalar
-    mxArray *scalar_Weight_Preserve = mxCreateDoubleMatrix(1, 1, mxREAL);
-    mxGetPr(scalar_Weight_Preserve)[0] = tcl_.get_value("Weight_Preserve");
-    engPutVariable(ep, "Weight_Preserve", scalar_Weight_Preserve);
-    mxArray *scalar_Iteration_Limit = mxCreateDoubleMatrix(1, 1, mxREAL);
-    mxGetPr(scalar_Iteration_Limit)[0] = tcl_.get_value("Iteration_Limit");
-    engPutVariable(ep, "Iteration_Limit", scalar_Iteration_Limit);
+    //mxArray *scalar_Weight_Preserve = mxCreateDoubleMatrix(1, 1, mxREAL);
+    //mxGetPr(scalar_Weight_Preserve)[0] = tcl_.get_value("Weight_Preserve");
+    //engPutVariable(ep, "Weight_Preserve", scalar_Weight_Preserve);
+    //mxArray *scalar_Iteration_Limit = mxCreateDoubleMatrix(1, 1, mxREAL);
+    //mxGetPr(scalar_Iteration_Limit)[0] = tcl_.get_value("Iteration_Limit");
+    //engPutVariable(ep, "Iteration_Limit", scalar_Iteration_Limit);
 }
 
 void OffsetSolution::Input_Laplacian_to_Engine(const vector<T> &tv_Lap, Engine* ep)
@@ -217,6 +220,16 @@ void OffsetSolution::Input_OffsetVector_to_Engine(Engine* ep)
         mxGetPr(V)[i + n_vertices * 2] = offset_vector[i][2];
     }
     engPutVariable(ep, "V", V);
+
+    // vector: bounds
+    // size: n * 1
+    mxArray *bounds = mxCreateDoubleMatrix(n_vertices, 1, mxREAL);
+
+    for (int i = 0; i < n_vertices; i++)
+    {
+        mxGetPr(bounds)[i] = offset_bounds[i];
+    }
+    engPutVariable(ep, "bounds", bounds);
 }
 
 // return con(angle AOB)

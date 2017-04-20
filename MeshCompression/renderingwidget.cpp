@@ -277,6 +277,7 @@ void RenderingWidget::paintGL()
     {
         vbo_basic_buffer_.clear();
         Render_Indication();
+        Render_Skeleton();
         Render_Axes();       
         basic_buffer_changed = false;
     }
@@ -690,6 +691,31 @@ void RenderingWidget::Render_Indication()
                 _push_vec(vbo_basic_buffer_, { _split3(target) });
                 _push_vec(vbo_basic_buffer_, { 1.0f, 1.0f, 0.0f });
             }
+        }
+    }
+}
+
+void RenderingWidget::Render_Skeleton()
+{
+    if (!has_lighting_)
+        return;
+
+    // add indication for skeleton.
+    if (scene.get("Skeleton") != nullptr)
+    {
+        auto &skel = scene.get("Skeleton")->mesh();
+
+        for (auto eh : skel.edges())
+        {
+            auto heh = skel.halfedge_handle(eh, 0);
+            auto vf = skel.from_vertex_handle(heh);
+            auto vt = skel.to_vertex_handle(heh);
+            auto p = skel.point(vf);
+            auto q = skel.point(vt);
+            _push_vec(vbo_basic_buffer_, { _split3(p) });
+            _push_vec(vbo_basic_buffer_, { 1.0f, 0.4f, 0.0f });
+            _push_vec(vbo_basic_buffer_, { _split3(q) });
+            _push_vec(vbo_basic_buffer_, { 1.0f, 0.4f, 0.0f });
         }
     }
 }
