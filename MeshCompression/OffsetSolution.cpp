@@ -61,8 +61,16 @@ void OffsetSolution::offset()
     // After this sub-routine, n*3 matrix 'X_0' added to workspace.
     Input_Positions_to_Engine(ep);
 
+    // After this sub-routine, n_face*3 matrix 'Tri' added to workspace.
+    Input_Topology_to_Engine(ep);
+
     // After this sub-routine, n*3 matrix 'V' added to workspace.
+    // After this sub-routine, n*1 vector 'bounds' added to workspace.
     Input_OffsetVector_to_Engine(ep);
+
+    QDir there{ "./script" };
+    auto cd_statement = "cd " + there.absolutePath();
+    engEvalString(ep, cd_statement.toStdString().c_str());
 
     // run MATLAB script
     QFile script_file{ tcl_.get_string("Script_Filename") };
@@ -101,8 +109,9 @@ void OffsetSolution::Basic_Prepare_and_Calculate_Laplacian(vector<T> &tv_Lap)
     adjacency = vector<vector<bool>>(n_vertices, vector<bool>(n_vertices, false));
     degrees = vector<int>(n_vertices, 0);
     neighbors = vector<vector<int>>(n_vertices);
-    offset_vector = vector<Vector3f>(n_vertices, {0, 0, 0});
+    offset_vector = vector<Vector3f>(n_vertices, { 0, 0, 0 });
     offset_bounds = vector<float>(n_vertices, 0.0f);
+    //triangles = vector<array<int, 3>>(n_faces, { 0, 0, 0 });
     for (auto vh : mesh_.vertices())
     {
         auto index_main = vh.idx();
@@ -115,6 +124,18 @@ void OffsetSolution::Basic_Prepare_and_Calculate_Laplacian(vector<T> &tv_Lap)
             degrees[index_main] += 1;
             neighbors[index_main].push_back(index_sub);
         }
+    }
+
+    for (auto fh : mesh_.faces())
+    {
+        auto fvit = mesh_.fv_iter(fh);
+        array<int, 3> face_idx;
+        int i = 0;
+        for (; fvit; ++fvit)
+        {
+            face_idx[i++] = fvit->idx();
+        }
+        triangles.push_back(face_idx);
     }
 
     Calculate_OffsetVector();
@@ -205,6 +226,22 @@ void OffsetSolution::Input_Positions_to_Engine(Engine* ep)
 
     }
     engPutVariable(ep, "X_0", X_0);
+}
+
+void OffsetSolution::Input_Topology_to_Engine(Engine* ep)
+{
+    // matrix: Tri
+    // size:   n_face * 3
+    mxArray *Tri = mxCreateDoubleMatrix(n_faces, 3, mxREAL);
+
+    for (int i = 0; i < n_faces; i++)
+    {
+        mxGetPr(Tri)[i] = triangles[i][0] + 1;
+        mxGetPr(Tri)[i + n_faces] = triangles[i][1] + 1;
+        mxGetPr(Tri)[i + n_faces * 2] = triangles[i][2] + 1;
+
+    }
+    engPutVariable(ep, "Tri", Tri);
 }
 
 void OffsetSolution::Input_OffsetVector_to_Engine(Engine* ep)

@@ -3,11 +3,13 @@
 #include "ConsoleMessageManager.h"
 #include "TextConfigLoader.h"
 #include <vector>
+#include <array>
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <engine.h>
 
 using std::vector;
+using std::array;
 
 using Vector3f = Eigen::Vector3f;
 using std::vector;
@@ -40,6 +42,7 @@ private:
     vector<vector<bool>>    adjacency;
     vector<int>             degrees;
     vector<vector<int>>     neighbors;
+    vector<array<int, 3>>   triangles;
 
     float _cotangent_for_angle_AOB(int, int, int);
     void Basic_Prepare_and_Calculate_Laplacian(vector<T>& tv_Lap);
@@ -47,5 +50,6 @@ private:
     void Input_Variables_to_Engine(Engine* ep);
     void Input_Laplacian_to_Engine(const vector<T> &tv_Lap, Engine* ep);
     void Input_Positions_to_Engine(Engine* ep);
+    void Input_Topology_to_Engine(Engine* ep);
     void Input_OffsetVector_to_Engine(Engine* ep);
 };
