@@ -9,6 +9,8 @@
 #define vout(v) {if (VERBOSE) printf(#v " = (%f, %f, %f)\n", SPLIT(v));}
 #define mout(x) {if (VERBOSE&&x.rows()<50)std::cout<<#x<<"\n"<<x<<"\n\n";}
 
+#define BUFFERSIZE 65536
+
 template <typename T1, typename T2>
 T2 vec_cast(const T1 &v)
 {
@@ -36,11 +38,6 @@ void OffsetSolution::offset()
     n_vertices = mesh.n_vertices();
     n_edges = mesh.n_edges();
     n_faces = mesh.n_faces();
-    //if (n_vertices + n_faces - n_edges != 2)
-    //{
-    //    msg_.log("V + F - E != 2.");
-    //    return;
-    //}
 
     vector<T> tv_Lap;
     Basic_Prepare_and_Calculate_Laplacian(tv_Lap);
@@ -73,22 +70,37 @@ void OffsetSolution::offset()
     engEvalString(ep, cd_statement.toStdString().c_str());
 
     // run MATLAB script
+    char buffer[BUFFERSIZE] = "";
+    engOutputBuffer(ep, buffer, BUFFERSIZE);
     QFile script_file{ tcl_.get_string("Script_Filename") };
     script_file.open(QFile::ReadOnly | QFile::Text);
     QTextStream tsv{ &script_file };
     QString script = tsv.readAll();
     engEvalString(ep, script.toStdString().c_str());
+    std::cout << buffer;
 
     // Write Back
-    //mxArray *ResX = engGetVariable(ep, "X");
-    //for (int i = 0; i < n_vertices; i++)
-    //{
-    //    Vector3f pos{ 0, 0, 0 };
-    //    pos[0] = mxGetPr(ResX)[i];
-    //    pos[1] = mxGetPr(ResX)[i + n_vertices];
-    //    pos[2] = mxGetPr(ResX)[i + n_vertices * 2];
-    //    mesh_.point(mesh_.vertex_handle(i)) = { SPLIT(pos) };
-    //}
+    mxArray *ResX = engGetVariable(ep, "X_in_result");
+    if (scene_.get("Inner") != nullptr)
+    {
+        scene_.remove_model("Inner");
+    }
+
+    auto mesh_clone_w = *scene_.get("Main");
+    auto &mesh_clone = mesh_clone_w.mesh();
+    for (int i = 0; i < n_vertices; i++)
+    {
+        Vector3f pos{ 0, 0, 0 };
+        pos[0] = mxGetPr(ResX)[i];
+        pos[1] = mxGetPr(ResX)[i + n_vertices];
+        pos[2] = mxGetPr(ResX)[i + n_vertices * 2];
+        mesh_clone.point(mesh_clone.vertex_handle(i)) = { SPLIT(pos) };
+    }
+
+    mesh_clone_w.name_ = "Inner";
+    mesh_clone_w.color_ = { 0.3f, 0.6f, 1.0f };
+    scene_.add_model(mesh_clone_w);
+
 
     msg_.log("complete offset.");
 }
@@ -182,9 +194,9 @@ void OffsetSolution::Calculate_OffsetVector()
 void OffsetSolution::Input_Variables_to_Engine(Engine* ep)
 {
     // scalar
-    //mxArray *scalar_Weight_Preserve = mxCreateDoubleMatrix(1, 1, mxREAL);
-    //mxGetPr(scalar_Weight_Preserve)[0] = tcl_.get_value("Weight_Preserve");
-    //engPutVariable(ep, "Weight_Preserve", scalar_Weight_Preserve);
+    mxArray *scalar_Verbose = mxCreateDoubleMatrix(1, 1, mxREAL);
+    mxGetPr(scalar_Verbose)[0] = tcl_.get_value("Verbose");
+    engPutVariable(ep, "Verbose", scalar_Verbose);
     //mxArray *scalar_Iteration_Limit = mxCreateDoubleMatrix(1, 1, mxREAL);
     //mxGetPr(scalar_Iteration_Limit)[0] = tcl_.get_value("Iteration_Limit");
     //engPutVariable(ep, "Iteration_Limit", scalar_Iteration_Limit);
@@ -278,12 +290,12 @@ float OffsetSolution::_cotangent_for_angle_AOB(int A, int O, int B)
 
     auto oa = static_cast<Vector3f>(a - o);
     auto ob = static_cast<Vector3f>(b - o);
-    vout(oa);
-    vout(ob);
+    //vout(oa);
+    //vout(ob);
 
     auto cot = oa.dot(ob) / oa.cross(ob).norm();
-    dout(cot);
-    lout();
+    //dout(cot);
+    //lout();
 
     return cot;
 }
