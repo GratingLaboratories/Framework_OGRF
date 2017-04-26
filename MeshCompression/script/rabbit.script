@@ -1,0 +1,2 @@
+open mesh/contraction/rabbit2_3_cont_o.coodtr.obj
+load_skel mesh/contraction/rabbit2_3_cont_i.coodtr.obj

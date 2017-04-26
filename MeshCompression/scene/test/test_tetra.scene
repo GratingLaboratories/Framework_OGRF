@@ -1,0 +1,103 @@
+{
+    "SceneName": "TEST_tetra",
+    "Description": "test scene.",
+    "FileLocation": "scene/test/",
+    "Models": [
+        {
+            "Name": "Ball",
+            "FileName": "ball_20",
+            "MeshExtension": ".obj",
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.25,
+            "Position": [0, 0, 1],
+            "ShowTetra": true
+        }, {
+            "Name": "Ball_0",
+            "FileName": "ball_20",
+            "MeshExtension": ".obj",
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.5,
+            "Position": [0, 0, 0.25],
+            "Color": [0.5, 1, 0.5],
+            "ShowTetra": true
+        }, {
+            "Name": "Ball_1",
+            "FileName": "ball_20",
+            "MeshExtension": ".obj",
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.25,
+            "Position": [0.4, 0.2, 1.2],
+            "Color": [0.3, 0.2, 0.9],
+            "ShowTetra": true
+        }, {
+            "Name": "Ball_2",
+            "FileName": "ball_20",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": true,
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.25,
+            "Position": [0.3, -0.4, 0.7],
+            "Color": [0.9, 0.9, 0.5],
+            "ShowTetra": true
+        }, {
+            "Name": "Horse",
+            "FileName": "horse",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": false,
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.8,
+            "Position": [-0.6, -0.4, 0.4],
+            "Color": [0.7, 0.5, 0.3],
+            "ShowTetra": true
+        }, {
+            "Name": "Cactus",
+            "FileName": "cactus++",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": false,
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.8,
+            "Position": [0.6, 0.4, 0.4],
+            "Color": [0.2, 1, 0.3],
+            "ShowTetra": true
+        }, {
+            "Name": "Cactus_1",
+            "FileName": "cactus++",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": false,
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.8,
+            "Position": [0.7, 0.8, 0.4],
+            "Color": [0.2, 1, 0.4],
+            "ShowTetra": true
+        }, {
+            "Name": "Cactus_2",
+            "FileName": "cactus++",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": false,
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 0.8,
+            "Position": [0.9, 0.2, 0.4],
+            "Color": [0.2, 1, 0.2],
+            "ShowTetra": true
+        }, {
+            "Name": "Ground",
+            "FileName": "plane",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": true,
+            "NeedScale": true,
+            "NeedCentralize": false,
+            "Scale": 1.0,
+            "Position": [0, 0, 0],
+            "Color": [0.5, 0.7, 1],
+            "ShowTetra": true
+        }
+    ]
+}

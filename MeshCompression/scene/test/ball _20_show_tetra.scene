@@ -1,0 +1,30 @@
+{
+    "SceneName": "Ball_Above_Plane",
+    "Description": "ball above plane.",
+    "FileLocation": "scene/test/",
+    "Models": [
+        {
+            "Name": "Ball_",
+            "FileName": "ball_20",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": false,
+            "NeedScale": true,
+            "NeedCentralize": true,
+            "Scale": 1.0,
+            "Color": [0.7, 0.7, 1],
+            "Position": [0, 0, 0.5],
+            "ShowTetra": true
+        }, {
+            "Name": "Ground",
+            "FileName": "plane",
+            "MeshExtension": ".obj",
+            "UseFaceNormal": true,
+            "NeedScale": true,
+            "NeedCentralize": false,
+            "Scale": 1.0,
+            "Position": [0, 0, 0],
+            "Color": [1, 1, 1],
+            "ShowTetra": false
+        }
+    ]
+}

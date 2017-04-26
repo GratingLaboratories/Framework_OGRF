@@ -1,0 +1,2 @@
+open mesh/contraction/seaturtle1_2_cont_o.coodtr.obj
+load_skel mesh/contraction/seaturtle1_2_cont_i.coodtr.obj

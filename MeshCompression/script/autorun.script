@@ -1,0 +1,2 @@
+open mesh/contraction/kitten1_4_cont_o.coodtr.obj
+load_skel mesh/contraction/kitten1_4_cont_i.coodtr.obj
