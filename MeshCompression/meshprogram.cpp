@@ -3,18 +3,27 @@
 #include "renderingwidget.h"
 #include "meshprogram.h"
 
-MeshProgram::MeshProgram(QWidget *parent)
-    : QMainWindow(parent)
+MeshProgram::MeshProgram(TextConfigLoader &gui_config, QWidget *parent)
+    : QMainWindow(parent), gui_config_(gui_config)
 {
     renderingwidget_ = new RenderingWidget(this);
-    connect(this, SIGNAL(SendSliceConfig(const SliceConfig &)), renderingwidget_, SLOT(SliceConfigChanged(const SliceConfig &)));
-    //renderingwidget_->grabKeyboard();
+    connect(
+        this, SIGNAL(SendSliceConfig(const SliceConfig &)),
+        renderingwidget_, SLOT(SliceConfigChanged(const SliceConfig &))
+        );
+
     setCentralWidget(new QWidget);
 
     // Default windows SIZE, minimize.
-    renderingwidget_->setMinimumHeight(800);
-    renderingwidget_->setMinimumWidth(800);
-    setGeometry(100, 100, 0, 0);
+    renderingwidget_->setMinimumHeight(gui_config_.get_int("GL_Widget_Min_Height"));
+    renderingwidget_->setMinimumWidth(gui_config_.get_int("GL_Widget_Min_Width"));
+    renderingwidget_->setMaximumHeight(gui_config_.get_int("GL_Widget_Max_Height"));
+    renderingwidget_->setMaximumWidth(gui_config_.get_int("GL_Widget_Max_Width"));
+
+    setGeometry(
+        gui_config_.get_int("Set_Geometry_X"),
+        gui_config_.get_int("Set_Geometry_Y"),
+        0, 0);
     resize(0, 0);
 
     CreateActions();
@@ -39,8 +48,8 @@ MeshProgram::MeshProgram(QWidget *parent)
 
     layout_main->addLayout(layout_left);
     layout_main->addWidget(renderingwidget_);
-    layout_main->setStretch(0, 1);
-    layout_main->setStretch(1, 5);
+    //layout_main->setStretch(0, 1);
+    //layout_main->setStretch(1, 5);
 
     centralWidget()->setLayout(layout_main);
 

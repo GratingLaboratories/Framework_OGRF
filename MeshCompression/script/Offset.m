@@ -1,37 +1,45 @@
-% %% Options
-% optimize_info.lower_bound = 0.18;
-% optimize_info.upper_bound = 0.9;
-% optimize_info.method      = 2;
-% % method: 1: buoyancy
-% % method: 2: static
-% % method: 3: spin
-% optimize_info.use_nonlcon = false;
-% optimize_info.w1  = [ 0.0, 100.0, 10.0, 10.0, 100.0, 0.01 ];
-% optimize_info.w2  = [ 0.0, 100.0, 20.0, 1e-2 ];
-% % optimize_info.w2  = [ -10.0, 0.0, 0.0, 0.01 ];
-% % [ M1,  Center_Z, /, panalty ]
-% optimize_info.rho = [ 1.2, 1.0 ];
-% optimize_info.max_iter = 20;
-% optimize_info.max_fun_evals = 1500;
-% n_eigs = 18;
+% Options
+optimize_info.use_const_bound = true;
+optimize_info.depth_bound = 0.03;
 
-%fish
-%% Options
-optimize_info.lower_bound = 0.04;
-optimize_info.upper_bound = 1.0;
-optimize_info.method      = 1;
+
+optimize_info.lower_bound = 0.1;
+optimize_info.upper_bound = 0.9;
+optimize_info.method      = 2;
 % method: 1: buoyancy
 % method: 2: static
 % method: 3: spin
 optimize_info.use_nonlcon = false;
-optimize_info.w1  = [ 10.0, 50.0, 25.0, 100.0, 0.0, 0.01 ];
-optimize_info.w2  = [ 0.0, 100.0, 10.0, 1e-2 ];
+optimize_info.w1  = [ 0.0, 100.0, 10.0, 10.0, 100.0, 0.01 ];
+optimize_info.w2  = [ 0.0, 100.0, 50.0, 1e-2 ];
 % optimize_info.w2  = [ -10.0, 0.0, 0.0, 0.01 ];
 % [ M1,  Center_Z, /, panalty ]
 optimize_info.rho = [ 1.2, 1.0 ];
-optimize_info.max_iter = 10;
+optimize_info.max_iter = 40;
 optimize_info.max_fun_evals = 150;
-n_eigs = 36;
+n_eigs = 18;
+
+% %fish
+% %% Options
+% optimize_info.use_const_bound = true;
+% optimize_info.depth_bound = 0.1;
+% % optimize_info.use_const_bound = false;
+% optimize_info.lower_bound = 0.05;
+% optimize_info.upper_bound = 0.95;
+% optimize_info.method      = 1;
+% % method: 1: buoyancy
+% % method: 2: static
+% % method: 3: spin
+% optimize_info.use_nonlcon = false;
+% optimize_info.w1  = [ 0.0, 100.0, 10.0, 50.0, 0.0, 0.0 ];
+% % optimize_info.w1  = [ 0.0, 100.0, 0.0, 10.0, 100.0, 0.01 ];
+% optimize_info.w2  = [ 0.0, 100.0, 10.0, 1e-2 ];
+% % optimize_info.w2  = [ -10.0, 0.0, 0.0, 0.01 ];
+% % [ M1,  Center_Z, /, panalty ]
+% optimize_info.rho = [ 1.2, 0.8 ];
+% optimize_info.max_iter = 40;
+% optimize_info.max_fun_evals = 1500;
+% n_eigs = 36;
 
 
 %%

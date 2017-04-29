@@ -9,7 +9,8 @@ public:
     ~TextConfigLoader();
     QString get_string(const QString &str) { return config_map_[str]; }
     float get_value(const QString &str) { return config_map_[str].toFloat(); }
-    bool get_bool(const QString &str) { return config_map_[str] == "True"; }
+    int   get_int(const QString &str) { return config_map_[str].toInt(); }
+    bool  get_bool(const QString &str) { return config_map_[str] == "True"; }
 
 private:
     QString filename_;

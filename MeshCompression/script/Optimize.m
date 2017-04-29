@@ -42,9 +42,16 @@ function [ X_in_result ] = Optimize( X_0, V, bounds, Tri, DdDa, VERBOSE, optimiz
 %%
     np = size(X_0, 1);
     k  = size(DdDa, 2);
-    a0 = DdDa \ ((upper_bound - lower_bound) * bounds);
     A  = [DdDa; - DdDa];
-    b  = [upper_bound * bounds; - lower_bound * bounds];
+    if optimize_info.use_const_bound
+        depth_bound = optimize_info.depth_bound;
+        a0 = DdDa \ ((upper_bound + lower_bound) * 0.5 * bounds);
+        b  = [upper_bound * bounds; - ones(np, 1) * depth_bound];
+    else
+        a0 = DdDa \ ((upper_bound * 0.8 + 0.2 * lower_bound) * bounds);
+        b  = [upper_bound * bounds; - lower_bound * bounds];
+    end
+
 
     options = optimset(...
         'Algorithm', 'active-set',...
@@ -52,9 +59,9 @@ function [ X_in_result ] = Optimize( X_0, V, bounds, Tri, DdDa, VERBOSE, optimiz
         'GradConstr','on',...
         'Display', 'iter',...
         'MaxFunEvals', optimize_info.max_fun_evals*size(X_0, 1),...
-        'TolCon',1e-3,... % Tolerance on the constraint violation, a positive scalar. The default is 1e-6.
-        'TolFun',1e-3,... % Termination tolerance on the function value, a positive scalar. The default is 1e-6.
-        'TolX', 1e-5, ... % Relative changes in all elements of x is the normalized step vector. The default is 1e-10.
+        'TolCon',1e-5,... % Tolerance on the constraint violation, a positive scalar. The default is 1e-6.
+        'TolFun',1e-5,... % Termination tolerance on the function value, a positive scalar. The default is 1e-6.
+        'TolX', 1e-7, ... % Relative changes in all elements of x is the normalized step vector. The default is 1e-10.
         'Hessian','bfgs',... % 'bfgs'{'lbfgs',positive integer}
         'MaxIter', optimize_info.max_iter);
 
@@ -87,7 +94,7 @@ function [ X_in_result ] = Optimize( X_0, V, bounds, Tri, DdDa, VERBOSE, optimiz
 
         % rroh = rho_water/rho_mat
         %rrho=rho(2)/rho(1);
-        f2 = (rho(2)*P_out(M1)-rho(1)*P_shell(M1))^2;
+        f2 = ( rho(2) * P_out(M1) - rho(1) * P_shell(M1) )^2;
 
         % boyouncy point towards center
         f3 = P_out(CX)^2+P_out(CY)^2+P_out(CZ)^2;
@@ -99,7 +106,7 @@ function [ X_in_result ] = Optimize( X_0, V, bounds, Tri, DdDa, VERBOSE, optimiz
         f5 = sum(a.^2);
 
         % objective
-        f = w1(1)*(f1x+f1y) + w1(2)*f2 + w1(3)*f3 + w1(4)*f4 + w1(5)*f1y + w1(6)*f5;
+        f = w1(1)*(f1x+f1y) + w1(2)*f2 + w1(3)*f3 + w1(4)*f4 + w1(5)*f1y - w1(6)*f0;
         % f = -f0;
 
         if nargout>1
@@ -122,7 +129,7 @@ function [ X_in_result ] = Optimize( X_0, V, bounds, Tri, DdDa, VERBOSE, optimiz
 
             gf5 = 2 * a;
 
-            gf = w1(1)*(gf1x+gf1y)' + w1(2)*gf2' + w1(3)*gf3' + w1(4)*gf4' + w1(6)*gf5 + w1(5)*gf1y';
+            gf = w1(1)*(gf1x+gf1y)' + w1(2)*gf2' + w1(3)*gf3' + w1(4)*gf4' + w1(6)*gf5 + w1(5)*gf0';
         end
     end
 

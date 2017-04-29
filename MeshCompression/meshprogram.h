@@ -2,6 +2,7 @@
 
 #include <QtWidgets/QMainWindow>
 #include "SliceConfig.h"
+#include "TextConfigLoader.h"
 class QLabel;
 class QPushButton;
 class QCheckBox;
@@ -13,7 +14,7 @@ class MeshProgram : public QMainWindow
     Q_OBJECT
 
 public:
-    MeshProgram(QWidget *parent = Q_NULLPTR);
+    MeshProgram(TextConfigLoader &gui_config_, QWidget *parent = Q_NULLPTR);
 
 private:
     void CreateActions();
@@ -35,6 +36,8 @@ public slots:
     void ShowAbout();
 
 private:
+    TextConfigLoader    &gui_config_;
+
     // Basic
     QMenu							*menu_file_;
     QMenu							*menu_edit_;
@@ -58,8 +61,7 @@ private:
     QAction                         *action_convert_;
     QAction                         *action_param_;
 
-    /// SKELETON BRANCH
-    /// NO NEED TO MERGE THESE CHANGE
+    // Branch SKELETON
     QAction                         *action_open_mesh;
     QAction                         *action_get_skeleton;
     QAction                         *action_load_skeleton;
