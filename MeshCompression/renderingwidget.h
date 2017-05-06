@@ -122,6 +122,9 @@ private:
     bool                        compress_ok_;
     ConsoleMessageManager       msg;
 
+    TextConfigLoader            render_config;
+    TextConfigLoader            shader_config;
+
     int                         frame_rate_limit;
     float                       fps;
     QTime                       last_time;
@@ -135,7 +138,6 @@ private:
     QOpenGLVertexArrayObject   *vao_basic_;
     std::vector<GLfloat>        vbo_basic_buffer_;
     bool                        basic_buffer_changed;
-    //std::vector<GLuint>         veo_basic_buffer_;
 
     OpenGLCamera                camera_;
     OpenGLMesh                  test;

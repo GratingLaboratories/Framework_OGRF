@@ -63,7 +63,9 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     basic_buffer_changed(true),
     scene(msg),
     light_dir_fix_(false),
-    sim(nullptr)
+    sim(nullptr),
+    render_config{ "./config/render.config" },
+    shader_config{ "./config/shader.config" }
 {
     // Set the focus policy to Strong, 
     // then the renderingWidget can accept keyboard input event and response.
@@ -75,6 +77,11 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 	eye_goal_[0] = eye_goal_[1] = eye_goal_[2] = 0.0;
 	eye_direction_[0] = eye_direction_[1] = 0.0;
 	eye_direction_[2] = 1.0;
+    background_color_ = {
+        render_config.get_int("Background_Color_r"),
+        render_config.get_int("Background_Color_g"),
+        render_config.get_int("Background_Color_b")
+    };
 
     //msg.enable(TRIVIAL_MSG);                   
     msg.enable(BUFFER_INFO_MSG);
@@ -103,8 +110,8 @@ void RenderingWidget::initializeGL()
 
     initializeOpenGLFunctions();
 
-    QString vertexShaderFileName{ "shader/BasicPhongVertexShader.vertexshader" };
-    QString fragmentShaderFileName{ "shader/BasicPhongFragmentShader.fragmentshader" };
+    QString vertexShaderFileName{ shader_config.get_string("Vertex_Shader_File") };
+    QString fragmentShaderFileName{ shader_config.get_string("Fragment_Shader_File") };
 
     // Read shader source code from files.
     QFile vertexShaderFile{ vertexShaderFileName };
