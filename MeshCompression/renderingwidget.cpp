@@ -77,11 +77,8 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 	eye_goal_[0] = eye_goal_[1] = eye_goal_[2] = 0.0;
 	eye_direction_[0] = eye_direction_[1] = 0.0;
 	eye_direction_[2] = 1.0;
-    background_color_ = {
-        render_config.get_int("Background_Color_r"),
-        render_config.get_int("Background_Color_g"),
-        render_config.get_int("Background_Color_b")
-    };
+
+    background_color_ = render_config.get_color("Background_Color");
 
     //msg.enable(TRIVIAL_MSG);                   
     msg.enable(BUFFER_INFO_MSG);
@@ -272,6 +269,8 @@ void RenderingWidget::paintGL()
             else
                 shader_program_phong_->setUniformValue("lightDirFrom", camera_.direction());
             shader_program_phong_->setUniformValue("viewPos", camera_.position());
+
+            // material 
 
             glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
         }
@@ -496,6 +495,12 @@ void RenderingWidget::ControlLineEvent(const QString &cmd_text)
     int cmd_size = cmd_split.size();
     if (cmd_size == 1)
     {
+        if (cmd_text == "reload_config")
+        {
+            msg.log("Reload Configurations.", INFO_MSG);
+            return;
+        }
+
         // same as "script $cmd$"
         QFile script_file{ "./script/" + cmd_text + ".script" };
         if (!script_file.exists())
@@ -640,6 +645,12 @@ void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
     scene.slice(config);
     basic_buffer_changed = true;
     updateGL();
+}
+
+void RenderingWidget::ReloadConfig()
+{
+    render_config = TextConfigLoader{ "./config/render.config" };
+    shader_config = TextConfigLoader{ "./config/shader.config" };
 }
 
 void RenderingWidget::Skeleton()

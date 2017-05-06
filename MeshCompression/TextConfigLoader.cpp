@@ -81,3 +81,19 @@ TextConfigLoader::TextConfigLoader(const QString& filename) : filename_(filename
 TextConfigLoader::~TextConfigLoader()
 {
 }
+
+QColor TextConfigLoader::get_color(const QString& str)
+{
+    auto r = str + "_r";
+    auto g = str + "_g";
+    auto b = str + "_b";
+    return{ config_map_[r].toInt(), config_map_[g].toInt(), config_map_[b].toInt() };
+}
+
+std::array<GLfloat, 3> TextConfigLoader::get_colorf(const QString& str)
+{
+    auto r = str + "_rf";
+    auto g = str + "_gf";
+    auto b = str + "_bf";
+    return{ config_map_[r].toFloat(), config_map_[g].toFloat(), config_map_[b].toFloat() };
+}

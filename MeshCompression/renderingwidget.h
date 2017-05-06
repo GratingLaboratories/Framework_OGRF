@@ -76,6 +76,8 @@ public slots:
     void OpenOneMesh();
     void OpenOneMesh(const QString &filename);
     void SliceConfigChanged(const SliceConfig &config);
+
+    void ReloadConfig();
     
 private:
     void Render_Axes();
