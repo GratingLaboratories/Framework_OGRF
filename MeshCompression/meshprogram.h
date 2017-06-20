@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
-#include "SliceConfig.h"
+#include "LayerConfig.h"
 #include "TextConfigLoader.h"
 class QLabel;
 class QPushButton;
@@ -25,13 +25,14 @@ private:
 
 signals:
     void SendCmdText(const QString &);
-    void SendSliceConfig(const SliceConfig &config);
+    void SendLayerConfig(const LayerConfig &config);
 
 public slots:
     void ShowMeshInfo(int npoint, int nedge, int nface) const;
     void ControlLineEvent();
     void SliceCheckboxEvent(bool);
-    void SliceSliderEvent(int);
+    void LayerSliderEvent(int);
+    void LayerTextEvent();
     void OpenFile() const;
     void ShowAbout();
 
@@ -89,15 +90,13 @@ private:
     QGroupBox						*groupbox_option_;
     QGroupBox                       *groupbox_control_;
 
-    // Slice Group
-    QGroupBox                       *groupbox_slice_;
-    QCheckBox						*checkbox_Xrev_;
-    QCheckBox						*checkbox_Yrev_;
-    QCheckBox						*checkbox_Zrev_;
-    QSlider                         *slider_X;
-    QSlider                         *slider_Y;
-    QSlider                         *slider_Z;
-    SliceConfig                     slice_config_;
+    // Layer Group
+    QGroupBox                       *groupbox_layer_;
+    QLineEdit                       *lineedit_mask_;
+    QLineEdit                       *lineedit_ppl_;
+    QSlider                         *slider_offset_block_;
+    QSlider                         *slider_offset_grid_;
+    LayerConfig                     layer_config_;
 
     // Information
     QLabel							*label_meshinfo_;

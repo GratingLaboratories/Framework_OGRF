@@ -147,9 +147,6 @@
     <ClInclude Include="SimulatorSimpleSpring_Midpoint.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SliceConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SkeletonSolution.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -157,6 +154,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="OffsetSolution.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LayerConfig.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

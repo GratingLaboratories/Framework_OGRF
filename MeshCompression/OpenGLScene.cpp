@@ -228,7 +228,7 @@ bool OpenGLScene::changed()
     return changed;
 }
 
-void OpenGLScene::slice(const SliceConfig& slice_config)
+void OpenGLScene::slice(const LayerConfig& slice_config)
 {
     this->slice_config_ = slice_config;
     // TODO 

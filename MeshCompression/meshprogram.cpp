@@ -8,9 +8,9 @@ MeshProgram::MeshProgram(TextConfigLoader &gui_config, QWidget *parent)
 {
     renderingwidget_ = new RenderingWidget(this);
     connect(
-        this, SIGNAL(SendSliceConfig(const SliceConfig &)),
-        renderingwidget_, SLOT(SliceConfigChanged(const SliceConfig &))
-        );
+        this, SIGNAL(SendLayerConfig(const LayerConfig &)),
+        renderingwidget_, SLOT(LayerConfigChanged(const LayerConfig &))
+        ); //TODO
 
     setCentralWidget(new QWidget);
 
@@ -36,20 +36,17 @@ MeshProgram::MeshProgram(TextConfigLoader &gui_config, QWidget *parent)
     QVBoxLayout *layout_left = new QVBoxLayout;
     layout_left->addWidget(groupbox_render_);
     layout_left->addStretch(1);
-    //layout_left->addWidget(groupbox_option_);
-    //layout_left->addStretch(1);
-    layout_left->addWidget(groupbox_slice_);
+    layout_left->addWidget(groupbox_layer_);
     layout_left->addStretch(1);
     layout_left->addWidget(groupbox_control_);
     layout_left->addStretch(2);
 
     // Horizontal Box Layout
     QHBoxLayout *layout_main = new QHBoxLayout;
-
     layout_main->addLayout(layout_left);
+    layout_main->setStretch(0, 0);
     layout_main->addWidget(renderingwidget_);
-    //layout_main->setStretch(0, 1);
-    //layout_main->setStretch(1, 5);
+    layout_main->setStretch(1, 1);
 
     centralWidget()->setLayout(layout_main);
 
@@ -75,12 +72,10 @@ void MeshProgram::CreateActions()
     action_saveas_ = new QAction(tr("Save &As..."), this);
     action_saveas_->setShortcuts(QKeySequence::SaveAs);
     action_saveas_->setStatusTip(tr("Save the document under a new name"));
-    //  connect(action_saveas_, SIGNAL(triggered()), imagewidget_, SLOT(SaveAs()));
 
     action_loadmesh_ = new QAction(tr("open_scene"), this);
     action_loadmesh_->setIcon(QIcon(tr(":/MainWindow/open.png")));
     action_loadtexture_ = new QAction(tr("LoadTexture"), this);
-    //action_background_ = new QAction(tr("ChangeBackground"), this);
     action_background_ = new QAction(tr(""), this);
 
     action_convert_ = new QAction(tr("Convert"), this);
@@ -89,11 +84,7 @@ void MeshProgram::CreateActions()
     connect(action_loadmesh_, SIGNAL(triggered()), renderingwidget_, SLOT(ReadScene()));
     connect(action_loadtexture_, SIGNAL(triggered()), renderingwidget_, SLOT(LoadTexture()));
     connect(action_background_, SIGNAL(triggered()), renderingwidget_, SLOT(SetBackground()));
-    //connect(action_convert_, SIGNAL(triggered()), renderingwidget_, SLOT(Convert()));
-    //connect(action_param_, SIGNAL(triggered()), renderingwidget_, SLOT(Param()));
 
-    /// SKELETON BRANCH
-    /// NO NEED TO MERGE THESE CHANGE
     action_open_mesh = new QAction(tr("[&Open one mesh]"), this);
     connect(action_open_mesh, SIGNAL(triggered()), renderingwidget_, SLOT(OpenOneMesh()));
 
@@ -105,8 +96,6 @@ void MeshProgram::CreateActions()
 
     action_main_solution = new QAction(tr("[&Main Solution]"));
     connect(action_main_solution, SIGNAL(triggered()), renderingwidget_, SLOT(Main_Solution()));
-
-    // action_open_clear;
 }
 
 void MeshProgram::CreateMenus()
@@ -147,8 +136,6 @@ void MeshProgram::CreateStatusBar()
     label_operatorinfo_ = new QLabel();
     label_operatorinfo_->setAlignment(Qt::AlignVCenter);
 
-
-    //statusBar()->addWidget(label_meshinfo_);
     connect(renderingwidget_, SIGNAL(meshInfo(int, int, int)), this, SLOT(ShowMeshInfo(int, int, int)));
 
     statusBar()->addWidget(label_operatorinfo_);
@@ -173,23 +160,13 @@ void MeshProgram::CreateRenderGroup()
     checkbox_light_ = new QCheckBox(tr("Indication"), this);
     connect(checkbox_light_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLight(bool)));
 
-    checkbox_texture_ = new QCheckBox(tr("TUNUSE"), this);
+    checkbox_texture_ = new QCheckBox(tr("/"), this);
     connect(checkbox_texture_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawTexture(bool)));
 
-    checkbox_axes_ = new QCheckBox(tr("AUNUSE"), this);
+    checkbox_axes_ = new QCheckBox(tr("/"), this);
     connect(checkbox_axes_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckDrawAxes(bool)));
 
     groupbox_render_ = new QGroupBox(tr("Render"), this);
-
-    // Group Option
-    //checkbox_lowpoly_ = new QCheckBox(tr("Low Poly"), this);
-    //connect(checkbox_lowpoly_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckLowPoly(bool)));
-    //checkbox_show_result_ = new QCheckBox(tr("Show Result"), this);
-    //connect(checkbox_show_result_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowResult(bool)));
-    //checkbox_show_diff_ = new QCheckBox(tr("Show Difference"), this);
-    //connect(checkbox_show_diff_, SIGNAL(clicked(bool)), renderingwidget_, SLOT(CheckShowDiff(bool)));
-
-    //groupbox_option_ = new QGroupBox(tr("View"), this);
 
     // Group Control
     pushbutton_compress_ = new QPushButton(tr("Apply"), this);
@@ -203,28 +180,26 @@ void MeshProgram::CreateRenderGroup()
 
     groupbox_control_ = new QGroupBox("Control", this);
 
-    // Group Slice
-    checkbox_Xrev_ = new QCheckBox(tr("rX"), this);
-    connect(checkbox_Xrev_, SIGNAL(clicked(bool)), this, SLOT(SliceCheckboxEvent(bool)));
-    checkbox_Yrev_ = new QCheckBox(tr("rY"), this);
-    connect(checkbox_Yrev_, SIGNAL(clicked(bool)), this, SLOT(SliceCheckboxEvent(bool)));
-    checkbox_Zrev_ = new QCheckBox(tr("rZ"), this);
-    connect(checkbox_Zrev_, SIGNAL(clicked(bool)), this, SLOT(SliceCheckboxEvent(bool)));
-    slider_X = new QSlider(Qt::Orientation::Horizontal);
-    slider_X->setMaximum(100);
-    slider_X->setMinimum(0);
-    connect(slider_X, SIGNAL(valueChanged(int)), this, SLOT(SliceSliderEvent(int)));
-    slider_Y = new QSlider(Qt::Orientation::Horizontal);
-    slider_Y->setMaximum(100);
-    slider_Y->setMinimum(0);
-    connect(slider_Y, SIGNAL(valueChanged(int)), this, SLOT(SliceSliderEvent(int)));
-    slider_Z = new QSlider(Qt::Orientation::Horizontal);
-    slider_Z->setMaximum(100);
-    slider_Z->setMinimum(0);
-    connect(slider_Z, SIGNAL(valueChanged(int)), this, SLOT(SliceSliderEvent(int)));
+    // Group Layer
+    lineedit_mask_ = new QLineEdit(tr("00111022200"), this);
+    lineedit_mask_->setMinimumWidth(300);
+    connect(lineedit_mask_, SIGNAL(returnPressed()), this, SLOT(LayerTextEvent()));
+    lineedit_ppl_  = new QLineEdit(tr("11.3"), this);
+    lineedit_ppl_->setMinimumWidth(300);
+    connect(lineedit_ppl_, SIGNAL(returnPressed()), this, SLOT(LayerTextEvent()));
 
-    groupbox_slice_ = new QGroupBox("Slice", this);
+    slider_offset_block_ = new QSlider(Qt::Orientation::Horizontal);
+    slider_offset_block_->setMaximum(100);
+    slider_offset_block_->setMinimum(0);
+    slider_offset_block_->setValue(50);
+    connect(slider_offset_block_, SIGNAL(valueChanged(int)), this, SLOT(LayerSliderEvent(int)));
+    slider_offset_grid_ = new QSlider(Qt::Orientation::Horizontal);
+    slider_offset_grid_->setMaximum(100);
+    slider_offset_grid_->setMinimum(0);
+    slider_offset_grid_->setValue(50);
+    connect(slider_offset_grid_, SIGNAL(valueChanged(int)), this, SLOT(LayerSliderEvent(int)));
 
+    groupbox_layer_ = new QGroupBox("Layer", this);
 
     // Layout for Group Boxes
     QVBoxLayout* render_layout = new QVBoxLayout(groupbox_render_);
@@ -235,23 +210,16 @@ void MeshProgram::CreateRenderGroup()
     render_layout->addWidget(checkbox_texture_);
     render_layout->addWidget(checkbox_axes_);
 
-    //QVBoxLayout* option_layout = new QVBoxLayout(groupbox_option_);
-    //option_layout->addWidget(checkbox_lowpoly_);
-    //option_layout->addWidget(checkbox_show_result_);
-    //option_layout->addWidget(checkbox_show_diff_);
-
     QVBoxLayout* control_layout = new QVBoxLayout(groupbox_control_);
     control_layout->addWidget(lineedit_control_);
     control_layout->addWidget(pushbutton_compress_);
 
-    QGridLayout* slice_layout = new QGridLayout;
-    slice_layout->addWidget(checkbox_Xrev_, 0, 0);
-    slice_layout->addWidget(checkbox_Yrev_, 1, 0);
-    slice_layout->addWidget(checkbox_Zrev_, 2, 0);
-    slice_layout->addWidget(slider_X, 0, 1);
-    slice_layout->addWidget(slider_Y, 1, 1);
-    slice_layout->addWidget(slider_Z, 2, 1);
-    groupbox_slice_->setLayout(slice_layout);
+    QGridLayout* layer_layout = new QGridLayout;
+    layer_layout->addWidget(lineedit_mask_, 0, 0);
+    layer_layout->addWidget(lineedit_ppl_, 1, 0);
+    layer_layout->addWidget(slider_offset_block_, 2, 0); 
+    layer_layout->addWidget(slider_offset_grid_, 3, 0); 
+    groupbox_layer_->setLayout(layer_layout);
 }
 
 void MeshProgram::ShowMeshInfo(int npoint, int nedge, int nface) const
@@ -265,23 +233,60 @@ void MeshProgram::ControlLineEvent()
     this->lineedit_control_->clear();
 }
 
+// NO USE
 void MeshProgram::SliceCheckboxEvent(bool)
 {
-    slice_config_.revX = this->checkbox_Xrev_->isChecked();
-    slice_config_.revY = this->checkbox_Yrev_->isChecked();
-    slice_config_.revZ = this->checkbox_Zrev_->isChecked();
-    SendSliceConfig(slice_config_);
+    return;
 }
 
-void MeshProgram::SliceSliderEvent(int)
+void MeshProgram::LayerSliderEvent(int)
 {
-    slice_config_.sliceX = static_cast<float>(this->slider_X->value()) /
-        (slider_X->maximum() - slider_X->minimum());
-    slice_config_.sliceY = static_cast<float>(this->slider_Y->value()) /
-        (slider_Y->maximum() - slider_Y->minimum());
-    slice_config_.sliceZ = static_cast<float>(this->slider_Z->value()) /
-        (slider_Z->maximum() - slider_Z->minimum());
-    SendSliceConfig(slice_config_);
+    layer_config_.mask = this->lineedit_mask_->text().toStdString();
+    layer_config_.num_layer = layer_config_.mask.length();
+    bool ok;
+    auto temp_ppl = this->lineedit_ppl_->text().toFloat(&ok);
+    if (ok)
+        layer_config_.ppl = temp_ppl;
+    {
+        auto value = static_cast<float>(slider_offset_block_->value());
+        auto range = slider_offset_block_->maximum() - slider_offset_block_->minimum();
+        value -= range / 2.0f;
+        value /= range;
+        layer_config_.offset_block = static_cast<int>(value * layer_config_.num_layer);
+    }
+    {
+        auto value = static_cast<float>(slider_offset_grid_->value());
+        auto range = slider_offset_grid_->maximum() - slider_offset_grid_->minimum();
+        value -= range / 2.0f;
+        value /= range;
+        layer_config_.offset_grid = value;
+    }
+    SendLayerConfig(layer_config_);
+}
+
+void MeshProgram::LayerTextEvent()
+{
+    layer_config_.mask = this->lineedit_mask_->text().toStdString();
+    layer_config_.num_layer = layer_config_.mask.length();
+    bool ok;
+    auto temp_ppl = this->lineedit_ppl_->text().toFloat(&ok);
+    if (ok)
+        layer_config_.ppl = temp_ppl;
+    {
+        auto value = static_cast<float>(slider_offset_block_->value());
+        auto range = slider_offset_block_->maximum() - slider_offset_block_->minimum();
+        value -= range / 2.0f;
+        value /= range;
+        layer_config_.offset_block = static_cast<int>(value * layer_config_.num_layer);
+    }
+    {
+        auto value = static_cast<float>(slider_offset_grid_->value());
+        auto range = slider_offset_grid_->maximum() - slider_offset_grid_->minimum();
+        value -= range / 2.0f;
+        value /= range;
+        layer_config_.offset_grid = value;
+    }
+    SendLayerConfig(layer_config_);
 }
 
 void MeshProgram::OpenFile() const

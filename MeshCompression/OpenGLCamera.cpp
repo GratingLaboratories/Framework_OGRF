@@ -56,7 +56,6 @@ void OpenGLCamera::move_back_target(float dis)
     update();
 }
 
-// BUG don't know why. do not care too much.
 void OpenGLCamera::move_around_right(float angle)
 {
     float radius = (position_ - target_).length();

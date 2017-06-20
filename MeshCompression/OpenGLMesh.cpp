@@ -91,7 +91,7 @@ void OpenGLMesh::set_point(int idx, QVector3D p)
     mesh_.set_point(v_handle, qvec2vec3f(p - position_));
 }
 
-void OpenGLMesh::slice(const SliceConfig& slice_config)
+void OpenGLMesh::slice(const LayerConfig& slice_config)
 {
     this->slice_config_ = slice_config;
     update();
@@ -471,36 +471,36 @@ void OpenGLMesh::mesh_unify(float scale, bool centrailze, TriMesh& mesh) const
 
 bool OpenGLMesh::slice_no_in_show_area(float x, float y, float z)
 {
-    if (slice_config_.revX)
-    {
-        if (x > min_point.x() + slice_config_.sliceX * scale_x + DELTA)
-            return true;
-    }
-    else
-    {
-        if (x < min_point.x() + slice_config_.sliceX * scale_x - DELTA)
-            return true;
-    }
-    if (slice_config_.revY)
-    {
-        if (y > min_point.y() + slice_config_.sliceY * scale_y + DELTA)
-            return true;
-    }
-    else
-    {
-        if (y < min_point.y() + slice_config_.sliceY * scale_y - DELTA)
-            return true;
-    }
-    if (slice_config_.revZ)
-    {
-        if (z > min_point.z() + slice_config_.sliceZ * scale_z + DELTA)
-            return true;
-    }
-    else
-    {
-        if (z < min_point.z() + slice_config_.sliceZ * scale_z - DELTA)
-            return true;
-    }
+    //if (slice_config_.revX)
+    //{
+    //    if (x > min_point.x() + slice_config_.sliceX * scale_x + DELTA)
+    //        return true;
+    //}
+    //else
+    //{
+    //    if (x < min_point.x() + slice_config_.sliceX * scale_x - DELTA)
+    //        return true;
+    //}
+    //if (slice_config_.revY)
+    //{
+    //    if (y > min_point.y() + slice_config_.sliceY * scale_y + DELTA)
+    //        return true;
+    //}
+    //else
+    //{
+    //    if (y < min_point.y() + slice_config_.sliceY * scale_y - DELTA)
+    //        return true;
+    //}
+    //if (slice_config_.revZ)
+    //{
+    //    if (z > min_point.z() + slice_config_.sliceZ * scale_z + DELTA)
+    //        return true;
+    //}
+    //else
+    //{
+    //    if (z < min_point.z() + slice_config_.sliceZ * scale_z - DELTA)
+    //        return true;
+    //}
 
     return false;
 }

@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 #include <array>
-#include "SliceConfig.h"
+#include "LayerConfig.h"
 
 #define ATTRIBUTE_POSITION_LOCATION 0
 #define ATTRIBUTE_POSITION_SIZE     3
@@ -63,7 +63,7 @@ public:
     void init();
     void tag_change();
     void set_point(int idx, QVector3D p);
-    void slice(const SliceConfig &slice_config);
+    void slice(const LayerConfig &slice_config);
     bool slice_no_in_show_area(float x, float y, float z);
     TriMesh &mesh() { return mesh_; }
     TetraMesh &tmesh() { return tetra_; }
@@ -104,6 +104,6 @@ private:
 
     void ReadTetra(const QString &name);
     TetraMesh tetra_;
-    SliceConfig slice_config_;
+    LayerConfig slice_config_;
 };
 

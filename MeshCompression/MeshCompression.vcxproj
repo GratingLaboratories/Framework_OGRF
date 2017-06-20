@@ -126,7 +126,7 @@
     <ClInclude Include="SimulatorBase.h" />
     <ClInclude Include="SimulatorSimpleSpring_Midpoint.h" />
     <ClInclude Include="SkeletonSolution.h" />
-    <ClInclude Include="SliceConfig.h" />
+    <ClInclude Include="LayerConfig.h" />
     <ClInclude Include="TetrahedralizationSolution.h" />
     <ClInclude Include="TextConfigLoader.h" />
     <CustomBuild Include="renderingwidget.h">

@@ -42,6 +42,7 @@ T2 vec_cast(const T1 &v)
     return{ v[0], v[1], v[2] };
 }
 
+
 RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     QOpenGLWidget(parent),
     ptr_mainwindow_(mainwindow),
@@ -67,7 +68,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     render_config{ "./config/render.config" },
     shader_config{ "./config/shader.config" }
 {
-    // Set the focus policy to Strong, 
+    // Set the focus policy to Strong,
     // then the renderingWidget can accept keyboard input event and response.
     setFocusPolicy(Qt::StrongFocus);
 
@@ -80,7 +81,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
 
     background_color_ = render_config.get_color("Background_Color");
 
-    //msg.enable(TRIVIAL_MSG);                   
+    //msg.enable(TRIVIAL_MSG);
     msg.enable(BUFFER_INFO_MSG);
 
     init_time.start();
@@ -99,6 +100,68 @@ RenderingWidget::~RenderingWidget()
     makeCurrent();
     vbo->destroy();
     doneCurrent();
+}
+
+int RenderingWidget::GenStencil(std::vector<GLfloat> &data)
+{
+    data.clear();
+    float pixel = 0.0f;
+    float grid_size = 1.0f;
+    float width = static_cast<float>(this->width());
+    while (pixel < width)
+    {
+        for (int i = 0; i < layer_config_.num_layer; ++i)
+        {
+            data.push_back((pixel - 0.5f * width) / (0.5f * width));
+            data.push_back(1.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+            data.push_back(1.0f);
+            data.push_back(0.0f);
+
+            data.push_back((pixel - 0.5f * width) / (0.5f * width));
+            data.push_back(-1.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+
+            data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
+            data.push_back(1.0f);
+            data.push_back(0.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+            data.push_back(1.0f);
+
+
+            data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
+            data.push_back(1.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+            data.push_back(1.0f);
+            data.push_back(0.0f);
+
+            data.push_back((pixel - 0.5f * width) / (0.5f * width));
+            data.push_back(-1.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+
+            data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
+            data.push_back(-1.0f);
+            data.push_back(0.0f);
+            data.push_back(0.0f);
+            data.push_back(1.0f);
+            data.push_back(1.0f);
+
+            pixel += grid_size;
+        }
+
+        pixel = pixel - grid_size * layer_config_.num_layer + layer_config_.ppl;
+    }
+
+    return data.size() / 6;
 }
 
 void RenderingWidget::initializeGL()
@@ -174,8 +237,15 @@ void RenderingWidget::initializeGL()
     shader_program_basic_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource_Basic);
     shader_program_basic_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_Basic);
 
+    shader_program_tencil_ = new QOpenGLShaderProgram(this);
+    shader_program_tencil_->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShaderSource_Basic);
+    shader_program_tencil_->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShaderSource_Basic);
+
     vao_basic_ = new QOpenGLVertexArrayObject();
     vao_basic_->create();
+
+    vao_tencil_ = new QOpenGLVertexArrayObject();
+    vao_tencil_->create();
 
     vao_basic_->bind();
     {
@@ -195,10 +265,23 @@ void RenderingWidget::initializeGL()
         shader_program_basic_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 6 * sizeof(GLfloat));
         shader_program_basic_->enableAttributeArray(1);
         shader_program_basic_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
-        // shader_program_basic_->enableAttributeArray(2);
-        // shader_program_basic_->setAttributeBuffer(2, GL_FLOAT, 6 * sizeof(GLfloat), 3, 9 * sizeof(GLfloat));
     }
     vao_basic_->release();
+
+    vao_tencil_->bind();
+    {
+        // vertex buffer.
+        vbo_tencil_ = new QOpenGLBuffer(QOpenGLBuffer::VertexBuffer);
+        vbo_tencil_->setUsagePattern(QOpenGLBuffer::DynamicDraw);
+        vbo_tencil_->create();
+        vbo_tencil_->bind();
+
+        shader_program_tencil_->enableAttributeArray(0);
+        shader_program_tencil_->setAttributeBuffer(0, GL_FLOAT, 0, 3, 6 * sizeof(GLfloat));
+        shader_program_tencil_->enableAttributeArray(1);
+        shader_program_tencil_->setAttributeBuffer(1, GL_FLOAT, 3 * sizeof(GLfloat), 3, 6 * sizeof(GLfloat));
+    }
+    vao_tencil_->release();
 
     camera_ = OpenGLCamera(DEFAULT_CAMERA_POSITION, { 0.0f, 0.0f, 0.0f });
 }
@@ -226,16 +309,16 @@ void RenderingWidget::paintGL()
     }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    
+
     glClearColor(background_color_.redF(),
         background_color_.greenF(),
         background_color_.blueF(),
         1.0f);
 
-    // Wire-frame mode.
-    // Any subsequent drawing calls will render the triangles in 
-    // wire-frame mode until we set it back to its default using 
-    // `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
+    /// Wire-frame mode.
+    /// Any subsequent drawing calls will render the triangles in
+    /// wire-frame mode until we set it back to its default using
+    /// `glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)`.
     if (!is_draw_face_)
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -247,11 +330,11 @@ void RenderingWidget::paintGL()
                 vbo->allocate(scene.vbuffer.data(), scene.vbuffer.size() * sizeof(GLfloat));
                 veo->allocate(scene.ebuffer.data(), scene.ebuffer.size() * sizeof(GLuint));
             vbo->release();
-        vao->release();        
+        vao->release();
     }
 
-    QMatrix4x4 mat_model; 
-            
+    QMatrix4x4 mat_model;
+
     QMatrix4x4 mat_projection;
     mat_projection.perspective(45.0f,
         float(this->width()) / float(this->height()),
@@ -270,48 +353,51 @@ void RenderingWidget::paintGL()
                 shader_program_phong_->setUniformValue("lightDirFrom", camera_.direction());
             shader_program_phong_->setUniformValue("viewPos", camera_.position());
 
-            // material 
+            // material
+            shader_program_phong_->setUniformValue("ambientStrength", render_config.get_value("ambient"));
+            shader_program_phong_->setUniformValue("shininess", render_config.get_value("shininess"));
 
             glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
         }
         vao->release();
     }
     shader_program_phong_->release();
+
     shader_program_basic_->bind();
-
-    if (basic_buffer_changed)
     {
-        vbo_basic_buffer_.clear();
-        Render_Indication();
-        Render_Skeleton();
-        Render_Axes();       
-        basic_buffer_changed = false;
-    }
-
-    vao_basic_->bind();
-        vbo_basic_->bind();
-            vbo_basic_->allocate(vbo_basic_buffer_.data(), vbo_basic_buffer_.size() * sizeof(GLfloat));
-            //veo_basic_->allocate(veo_basic_buffer_.data(), veo_basic_buffer_.size() * sizeof(GLuint));
-        vbo_basic_->release();
-    vao_basic_->release();
-
-    {
-        vao_basic_->bind();
+        if (basic_buffer_changed)
         {
-            shader_program_basic_->setUniformValue("model", mat_model);
-            shader_program_basic_->setUniformValue("view", camera_.view_mat());
-            shader_program_basic_->setUniformValue("projection", mat_projection);
-
-            glDrawArrays(GL_LINES, 0, vbo_basic_buffer_.size() / 6);
+            vbo_basic_buffer_.clear();
+            Render_Indication();
+            Render_Skeleton();
+            Render_Axes();
+            basic_buffer_changed = false;
         }
+
+        vao_basic_->bind();
+        vbo_basic_->bind();
+        vbo_basic_->allocate(vbo_basic_buffer_.data(), vbo_basic_buffer_.size() * sizeof(GLfloat));
+        vbo_basic_->release();
         vao_basic_->release();
+
+        {
+            vao_basic_->bind();
+            {
+                shader_program_basic_->setUniformValue("model", mat_model);
+                shader_program_basic_->setUniformValue("view", camera_.view_mat());
+                shader_program_basic_->setUniformValue("projection", mat_projection);
+
+                glDrawArrays(GL_LINES, 0, vbo_basic_buffer_.size() / 6);
+            }
+            vao_basic_->release();
+        }
     }
     shader_program_basic_->release();
 
     // Restore Polygon Mode to ensure the correctness of native painter
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glDisable(GL_CULL_FACE | GL_DEPTH_TEST);
-    
+
     // Native Painter work.
     QPainter painter(this);
     // Show FPS.
@@ -329,34 +415,10 @@ void RenderingWidget::paintGL()
 
 void RenderingWidget::Render()
 {
-    /* TRAIL branch */
-    /*
-	DrawPoints(is_draw_point_);
-	DrawEdge(is_draw_edge_);
-	DrawFace(is_draw_face_);
-	DrawTexture(is_draw_texture_);
-
-    DrawAxes(is_draw_axes_);
-    */
 }
 
 void RenderingWidget::SetLight()
 {
-	//static GLfloat mat_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//static GLfloat mat_shininess[] = { 50.0f };
-	//static GLfloat light_position[] = { 1.0f, 1.0f, 1.0f, 0.0f };
-	//static GLfloat white_light[] = { 0.8f, 0.8f, 0.9f, 1.0f };
-	//static GLfloat lmodel_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
-
-	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-	//glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-	//glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-	//glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);
-	//glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);
-	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
-
-	//glEnable(GL_LIGHTING);
-	//glEnable(GL_LIGHT0);
 }
 
 void RenderingWidget::SetBackground()
@@ -497,6 +559,7 @@ void RenderingWidget::ControlLineEvent(const QString &cmd_text)
     {
         if (cmd_text == "reload_config")
         {
+            ReloadConfig();
             msg.log("Reload Configurations.", INFO_MSG);
             return;
         }
@@ -639,11 +702,9 @@ void RenderingWidget::Render_Axes()
     //veo_basic_buffer_ = { 0, 3, 1, 4, 2, 5 };
 }
 
-void RenderingWidget::SliceConfigChanged(const SliceConfig& config)
+void RenderingWidget::LayerConfigChanged(const LayerConfig& config)
 {
-    this->slice_config_ = config;
-    scene.slice(config);
-    basic_buffer_changed = true;
+    this->layer_config_ = config;
     updateGL();
 }
 
@@ -817,8 +878,6 @@ void RenderingWidget::Main_Solution()
 
     basic_buffer_changed = true;
 }
-
-
 
 // calculate FPS,
 // take a current fps value to update
@@ -1065,7 +1124,6 @@ void RenderingWidget::keyReleaseEvent(QKeyEvent *e)
     //	break;
     //}
 }
-
 
 void RenderingWidget::CheckDrawPoint(bool bv)
 {
