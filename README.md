@@ -1,2 +1,1 @@
-# branch: skeleton
-Skeletonization Solution
+# None
