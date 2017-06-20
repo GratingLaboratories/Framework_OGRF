@@ -430,7 +430,7 @@ void RenderingWidget::paintGL()
     for (int i = 1; i <= layer_config_.max_layer; i++)
     {
         auto camera{ camera_ };
-        float sight_delta = (1.0f * i - 0.5f * (layer_config_.max_layer + 1)) * layer_config_.sight_distance;
+        float sight_delta = (1.0f * i - 0.5f * (layer_config_.max_layer + 1)) * layer_config_.pd;
         if (layer_config_.max_layer > 1)
             sight_delta /= (layer_config_.max_layer - 1);
         camera.move_right(sight_delta);

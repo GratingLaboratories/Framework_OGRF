@@ -94,6 +94,7 @@ private:
     QGroupBox                       *groupbox_layer_;
     QLineEdit                       *lineedit_mask_;
     QLineEdit                       *lineedit_ppl_;
+    QLineEdit                       *lineedit_pd_;
     QSlider                         *slider_offset_block_;
     QSlider                         *slider_offset_grid_;
     LayerConfig                     layer_config_;

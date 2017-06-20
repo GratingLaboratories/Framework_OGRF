@@ -12,5 +12,5 @@ struct LayerConfig
     float ppl{ 11.3f };
     int   offset_block{ 0 };
     float offset_grid{ 0.0f };
-    float sight_distance{ 0.25f };
+    float pd{ 0.2f };
 };

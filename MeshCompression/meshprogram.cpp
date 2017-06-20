@@ -187,7 +187,10 @@ void MeshProgram::CreateRenderGroup()
     lineedit_ppl_  = new QLineEdit(tr("11.3"), this);
     lineedit_ppl_->setMinimumWidth(300);
     connect(lineedit_ppl_, SIGNAL(returnPressed()), this, SLOT(LayerTextEvent()));
-
+    lineedit_pd_   = new QLineEdit(tr("0.2"), this);
+    lineedit_pd_->setMinimumWidth(300);
+    connect(lineedit_pd_, SIGNAL(returnPressed()), this, SLOT(LayerTextEvent()));
+    
     slider_offset_block_ = new QSlider(Qt::Orientation::Horizontal);
     slider_offset_block_->setMaximum(100);
     slider_offset_block_->setMinimum(0);
@@ -214,11 +217,24 @@ void MeshProgram::CreateRenderGroup()
     control_layout->addWidget(lineedit_control_);
     control_layout->addWidget(pushbutton_compress_);
 
+    auto lb_mask = new QLabel("mask");
+    auto lb_ppl = new QLabel("PPL");
+    auto lb_pd = new QLabel("PD");
+    auto lb_offset_bl = new QLabel("Offset Block");
+    auto lb_offset_gr = new QLabel("Offset Grid");
+
     QGridLayout* layer_layout = new QGridLayout;
-    layer_layout->addWidget(lineedit_mask_, 0, 0);
-    layer_layout->addWidget(lineedit_ppl_, 1, 0);
-    layer_layout->addWidget(slider_offset_block_, 2, 0); 
-    layer_layout->addWidget(slider_offset_grid_, 3, 0); 
+    layer_layout->addWidget(lb_mask, 0, 0);
+    layer_layout->addWidget(lb_ppl, 2, 0);
+    layer_layout->addWidget(lb_pd, 4, 0);
+    layer_layout->addWidget(lb_offset_bl, 6, 0);
+    layer_layout->addWidget(lb_offset_gr, 8, 0);
+
+    layer_layout->addWidget(lineedit_mask_, 1, 0);
+    layer_layout->addWidget(lineedit_ppl_, 3, 0);
+    layer_layout->addWidget(lineedit_pd_, 5, 0);
+    layer_layout->addWidget(slider_offset_block_, 7, 0); 
+    layer_layout->addWidget(slider_offset_grid_, 9, 0); 
     groupbox_layer_->setLayout(layer_layout);
 }
 
@@ -256,6 +272,9 @@ void MeshProgram::LayerSliderEvent(int)
     auto temp_ppl = this->lineedit_ppl_->text().toFloat(&ok);
     if (ok)
         layer_config_.ppl = temp_ppl;
+    auto temp_pd = this->lineedit_pd_->text().toFloat(&ok);
+    if (ok)
+        layer_config_.pd = temp_pd;
     {
         auto value = static_cast<float>(slider_offset_block_->value());
         auto range = slider_offset_block_->maximum() - slider_offset_block_->minimum();
@@ -290,6 +309,9 @@ void MeshProgram::LayerTextEvent()
     auto temp_ppl = this->lineedit_ppl_->text().toFloat(&ok);
     if (ok)
         layer_config_.ppl = temp_ppl;
+    auto temp_pd = this->lineedit_pd_->text().toFloat(&ok);
+    if (ok)
+        layer_config_.pd = temp_pd;
     {
         auto value = static_cast<float>(slider_offset_block_->value());
         auto range = slider_offset_block_->maximum() - slider_offset_block_->minimum();
