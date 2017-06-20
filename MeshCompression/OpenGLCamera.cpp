@@ -7,6 +7,15 @@ OpenGLCamera::~OpenGLCamera()
 {
 }
 
+OpenGLCamera::OpenGLCamera(const OpenGLCamera& rhs)
+{
+    position_ = rhs.position_;
+    target_ = rhs.target_;
+    direction_ = rhs.direction_;
+    right_ = rhs.right_;
+    up_ = rhs.up_;
+}
+
 void OpenGLCamera::update()
 {
     direction_ = (position_ - target_).normalized();

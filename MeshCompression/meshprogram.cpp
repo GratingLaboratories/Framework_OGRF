@@ -243,6 +243,15 @@ void MeshProgram::LayerSliderEvent(int)
 {
     layer_config_.mask = this->lineedit_mask_->text().toStdString();
     layer_config_.num_layer = layer_config_.mask.length();
+    int max = 1;
+    auto &mask = layer_config_.mask;
+    for (int i = 0; i < mask.size(); ++i)
+    {
+        auto v = mask[i];
+        if ('0' < v && '9' >= v && v - '0' > max)
+            max = v - '0';
+    }
+    layer_config_.max_layer = max;
     bool ok;
     auto temp_ppl = this->lineedit_ppl_->text().toFloat(&ok);
     if (ok)
@@ -268,6 +277,15 @@ void MeshProgram::LayerTextEvent()
 {
     layer_config_.mask = this->lineedit_mask_->text().toStdString();
     layer_config_.num_layer = layer_config_.mask.length();
+    int max = 1;
+    auto &mask = layer_config_.mask;
+    for (int i = 0; i < mask.size(); ++i)
+    {
+        auto v = mask[i];
+        if ('0' < v && '9' >= v && v - '0' > max)
+            max = v - '0';
+    }
+    layer_config_.max_layer = max;
     bool ok;
     auto temp_ppl = this->lineedit_ppl_->text().toFloat(&ok);
     if (ok)

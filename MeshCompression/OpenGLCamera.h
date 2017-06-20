@@ -6,6 +6,7 @@ class OpenGLCamera
 {
 public:
     OpenGLCamera() = default;
+    OpenGLCamera(const OpenGLCamera &rhs);
     OpenGLCamera(float x, float y, float z, float xt = 0.0f, float yt = 0.0f, float zt = 0.0f)
         : position_{ x, y, z }, target_{ xt, yt, zt } { update(); }
     OpenGLCamera(const QVector3D &pos, const QVector3D &tar = { 0.0f ,0.0f ,0.0f })

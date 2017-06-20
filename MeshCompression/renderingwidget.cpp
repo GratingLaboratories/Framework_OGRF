@@ -62,6 +62,7 @@ RenderingWidget::RenderingWidget(QWidget *parent, MainWindow* mainwindow) :
     frame_rate_limit(FPS_LIMIT),
     fps(0),
     basic_buffer_changed(true),
+    tencil_buffer_changed(true),
     scene(msg),
     light_dir_fix_(false),
     sim(nullptr),
@@ -105,55 +106,59 @@ RenderingWidget::~RenderingWidget()
 int RenderingWidget::GenStencil(std::vector<GLfloat> &data)
 {
     data.clear();
-    float pixel = 0.0f;
+    float pixel = layer_config_.offset_block * 1.0f + layer_config_.offset_grid;
     float grid_size = 1.0f;
     float width = static_cast<float>(this->width());
     while (pixel < width)
     {
         for (int i = 0; i < layer_config_.num_layer; ++i)
         {
-            data.push_back((pixel - 0.5f * width) / (0.5f * width));
-            data.push_back(1.0f);
-            data.push_back(0.0f);
-            data.push_back(1.0f);
-            data.push_back(1.0f);
-            data.push_back(0.0f);
+            float color_indication = (i + 1) * 0.3f / layer_config_.num_layer + 0.3;
+            if (i % 2 == 0)
+                color_indication += 0.4f;
 
             data.push_back((pixel - 0.5f * width) / (0.5f * width));
-            data.push_back(-1.0f);
-            data.push_back(0.0f);
             data.push_back(1.0f);
             data.push_back(0.0f);
-            data.push_back(1.0f);
-
-            data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
-            data.push_back(1.0f);
-            data.push_back(0.0f);
-            data.push_back(0.0f);
-            data.push_back(1.0f);
-            data.push_back(1.0f);
-
-
-            data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
-            data.push_back(1.0f);
-            data.push_back(0.0f);
-            data.push_back(1.0f);
-            data.push_back(1.0f);
+            data.push_back(color_indication);
+            data.push_back(color_indication);
             data.push_back(0.0f);
 
             data.push_back((pixel - 0.5f * width) / (0.5f * width));
             data.push_back(-1.0f);
             data.push_back(0.0f);
+            data.push_back(color_indication);
+            data.push_back(color_indication);
+            data.push_back(0.0f);
+
+            data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
             data.push_back(1.0f);
             data.push_back(0.0f);
+            data.push_back(color_indication);
+            data.push_back(color_indication);
+            data.push_back(0.0f);
+
+
+            data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
             data.push_back(1.0f);
+            data.push_back(0.0f);
+            data.push_back(color_indication);
+            data.push_back(color_indication);
+            data.push_back(0.0f);
+
+            data.push_back((pixel - 0.5f * width) / (0.5f * width));
+            data.push_back(-1.0f);
+            data.push_back(0.0f);
+            data.push_back(color_indication);
+            data.push_back(color_indication);
+            data.push_back(0.0f);
 
             data.push_back(((pixel + grid_size) - 0.5f * width) / (0.5f * width));
             data.push_back(-1.0f);
             data.push_back(0.0f);
+            data.push_back(color_indication);
+            data.push_back(color_indication);
             data.push_back(0.0f);
-            data.push_back(1.0f);
-            data.push_back(1.0f);
 
             pixel += grid_size;
         }
@@ -289,6 +294,7 @@ void RenderingWidget::initializeGL()
 void RenderingWidget::resizeGL(int w, int h)
 {
     msg.log(QString("resizeGL() with size w=%0, h=%1").arg(w).arg(h), TRIVIAL_MSG);
+    tencil_buffer_changed = true;
 }
 
 void RenderingWidget::paintGL()
@@ -340,29 +346,6 @@ void RenderingWidget::paintGL()
         float(this->width()) / float(this->height()),
         0.1f, 100.f);
 
-    shader_program_phong_->bind();
-    {
-        vao->bind();
-        {
-            shader_program_phong_->setUniformValue("model", mat_model);
-            shader_program_phong_->setUniformValue("view", camera_.view_mat());
-            shader_program_phong_->setUniformValue("projection", mat_projection);
-            if (light_dir_fix_)
-                shader_program_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
-            else
-                shader_program_phong_->setUniformValue("lightDirFrom", camera_.direction());
-            shader_program_phong_->setUniformValue("viewPos", camera_.position());
-
-            // material
-            shader_program_phong_->setUniformValue("ambientStrength", render_config.get_value("ambient"));
-            shader_program_phong_->setUniformValue("shininess", render_config.get_value("shininess"));
-
-            glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
-        }
-        vao->release();
-    }
-    shader_program_phong_->release();
-
     shader_program_basic_->bind();
     {
         if (basic_buffer_changed)
@@ -393,6 +376,98 @@ void RenderingWidget::paintGL()
         }
     }
     shader_program_basic_->release();
+
+    shader_program_tencil_->bind();
+    {
+        if (tencil_buffer_changed)
+        {
+            vbo_tencil_buffer_.clear();
+            GenStencil(vbo_tencil_buffer_);
+            tencil_buffer_changed = false;
+        }
+
+        vao_tencil_->bind();
+        vbo_tencil_->bind();
+        vbo_tencil_->allocate(vbo_tencil_buffer_.data(), vbo_tencil_buffer_.size() * sizeof(GLfloat));
+        vbo_tencil_->release();
+        vao_tencil_->release();
+
+        auto identity = QMatrix4x4();
+        vao_tencil_->bind();
+        {
+            shader_program_tencil_->setUniformValue("model", identity);
+            shader_program_tencil_->setUniformValue("view", identity);
+            shader_program_tencil_->setUniformValue("projection", identity);
+
+            // Stencil_Value Replace with 0x80 + s << 3; 
+            glEnable(GL_STENCIL_TEST);
+            glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+            glStencilMask(0xFF);
+            glDepthMask(GL_FALSE);
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+            {
+                glClear(GL_STENCIL_BUFFER_BIT); // Clear
+                int num_layer = layer_config_.num_layer;
+                for (GLuint i = 0; i < vbo_tencil_buffer_.size() / 6; ++i)
+                {
+                    GLuint tencil_value = layer_config_.mask[i % num_layer] - '0';
+                    if (tencil_value == 0)
+                        continue;
+                    glStencilFunc(GL_ALWAYS, ((tencil_value) << 3) | 0x80, 0xFF);
+                    glDrawArrays(GL_TRIANGLES, i * 6, 6);
+                }
+            }
+            glDisable(GL_STENCIL_TEST);
+            glDepthMask(GL_TRUE);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        }
+        vao_tencil_->release();
+    }
+    shader_program_tencil_->release();
+
+    // Prepare matrix view(s).
+    std::vector<QMatrix4x4> views(layer_config_.max_layer);
+    for (int i = 1; i <= layer_config_.max_layer; i++)
+    {
+        auto camera{ camera_ };
+        float sight_delta = (1.0f * i - 0.5f * (layer_config_.max_layer + 1)) * layer_config_.sight_distance;
+        if (layer_config_.max_layer > 1)
+            sight_delta /= (layer_config_.max_layer - 1);
+        camera.move_right(sight_delta);
+        views[i - 1] = camera.view_mat();
+    }
+
+    shader_program_phong_->bind();
+    {
+        vao->bind();
+        {
+            shader_program_phong_->setUniformValue("model", mat_model);
+            shader_program_phong_->setUniformValue("projection", mat_projection);
+            if (light_dir_fix_)
+                shader_program_phong_->setUniformValue("lightDirFrom", 1.0f, 1.0f, 1.0f);
+            else
+                shader_program_phong_->setUniformValue("lightDirFrom", camera_.direction());
+            shader_program_phong_->setUniformValue("viewPos", camera_.position());
+
+            // material
+            shader_program_phong_->setUniformValue("ambientStrength", render_config.get_value("ambient"));
+            shader_program_phong_->setUniformValue("shininess", render_config.get_value("shininess"));
+
+            glEnable(GL_STENCIL_TEST);
+            for (int i = 0; i < layer_config_.max_layer; i++)
+            {
+                // Switch Camera
+                shader_program_phong_->setUniformValue("view", views[i]);
+
+                glStencilFunc(GL_EQUAL, ((i + 1) << 3) | 0x80, 0xFF);
+                glStencilMask(0x00);
+                glDrawElements(GL_TRIANGLES, scene.ebuffer.size(), GL_UNSIGNED_INT, (GLvoid *)0);
+            }
+            glDisable(GL_STENCIL_TEST);
+        }
+        vao->release();
+    }
+    shader_program_phong_->release();
 
     // Restore Polygon Mode to ensure the correctness of native painter
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -705,6 +780,7 @@ void RenderingWidget::Render_Axes()
 void RenderingWidget::LayerConfigChanged(const LayerConfig& config)
 {
     this->layer_config_ = config;
+    tencil_buffer_changed = true;
     updateGL();
 }
 
