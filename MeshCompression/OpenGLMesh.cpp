@@ -32,13 +32,13 @@ void OpenGLMesh::init()
     }
     // try find tetrahedralization.
     QString tetra_name = file_location_ + "tetra/" + file_name_;
-    if (!_FileExists(tetra_name + TETRA_ELE_EXTENSION) && NEED_TETRA)
-    {
-        TriMesh temp_mesh = this->mesh_;
-        mesh_unify(1.0, true, temp_mesh); // unify to 1.0 before tetra().
-        TetrahedralizationSolution ts{ temp_mesh, (tetra_name).toStdString() };
-        ts.tetra();
-    }
+    //if (!_FileExists(tetra_name + TETRA_ELE_EXTENSION) && NEED_TETRA)
+    //{
+    //    TriMesh temp_mesh = this->mesh_;
+    //    mesh_unify(1.0, true, temp_mesh); // unify to 1.0 before tetra().
+    //    TetrahedralizationSolution ts{ temp_mesh, (tetra_name).toStdString() };
+    //    ts.tetra();
+    //}
 
     if (mesh_file_name.contains("coodtr"))
     {

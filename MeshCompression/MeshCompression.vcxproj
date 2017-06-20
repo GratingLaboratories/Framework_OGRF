@@ -31,8 +31,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
-    <IncludePath>C:\Users\luwuy\Source\Repos\tetgen1.5.1-beta1\build\Debug\include;C:\Program Files\MATLAB\R2016a\extern\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\luwuy\Source\Repos\tetgen1.5.1-beta1\build\Debug\lib;C:\Program Files\MATLAB\R2016a\extern\lib\win64\microsoft;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\luwuy\Source\Repos\tetgen1.5.1-beta1\build\Debug\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\luwuy\Source\Repos\tetgen1.5.1-beta1\build\Debug\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
@@ -54,7 +54,7 @@
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5OpenGLd.lib;opengl32.lib;glu32.lib;Qt5Widgetsd.lib;OpenMeshCored.lib;OpenMeshToolsd.lib;SOIL.lib;libmx.lib;libmat.lib;libeng.lib;tet.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5OpenGLd.lib;opengl32.lib;glu32.lib;Qt5Widgetsd.lib;OpenMeshCored.lib;OpenMeshToolsd.lib;SOIL.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/ignore:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>

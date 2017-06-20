@@ -88,14 +88,14 @@ void MeshProgram::CreateActions()
     action_open_mesh = new QAction(tr("[&Open one mesh]"), this);
     connect(action_open_mesh, SIGNAL(triggered()), renderingwidget_, SLOT(OpenOneMesh()));
 
-    action_get_skeleton = new QAction(tr("[&Skeleton]"));
-    connect(action_get_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Skeleton()));
+    //action_get_skeleton = new QAction(tr("[&Skeleton]"));
+    //connect(action_get_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Skeleton()));
 
-    action_load_skeleton = new QAction(tr("[&Load Skeleton]"));
-    connect(action_load_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Load_Skeleton()));
+    //action_load_skeleton = new QAction(tr("[&Load Skeleton]"));
+    //connect(action_load_skeleton, SIGNAL(triggered()), renderingwidget_, SLOT(Load_Skeleton()));
 
-    action_main_solution = new QAction(tr("[&Main Solution]"));
-    connect(action_main_solution, SIGNAL(triggered()), renderingwidget_, SLOT(Main_Solution()));
+    //action_main_solution = new QAction(tr("[&Main Solution]"));
+    //connect(action_main_solution, SIGNAL(triggered()), renderingwidget_, SLOT(Main_Solution()));
 }
 
 void MeshProgram::CreateMenus()
@@ -120,9 +120,9 @@ void MeshProgram::CreateToolBars()
     toolbar_basic_->addAction(action_save_);
     toolbar_basic_->addAction(action_background_);
     toolbar_basic_->addAction(action_open_mesh);
-    toolbar_basic_->addAction(action_get_skeleton);
-    toolbar_basic_->addAction(action_load_skeleton);
-    toolbar_basic_->addAction(action_main_solution);
+    //toolbar_basic_->addAction(action_get_skeleton);
+    //toolbar_basic_->addAction(action_load_skeleton);
+    //toolbar_basic_->addAction(action_main_solution);
     //toolbar_basic_->addAction(action_convert_);
     //toolbar_basic_->addAction(action_param_);
 }

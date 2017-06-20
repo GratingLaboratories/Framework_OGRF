@@ -797,20 +797,20 @@ void RenderingWidget::Skeleton()
     if (scene.get("Skeleton") == nullptr)
     {
         auto mesh_clone = *scene.get("Main");
-        SkeletonSolution ss(mesh_clone.mesh(), msg);
-        ss.skeletonize();
-        mesh_clone.color_ = { 1.0f, 0.0f, 0.0f };
-        mesh_clone.name_ = "Skeleton";
-        scene.add_model(mesh_clone);
+        //SkeletonSolution ss(mesh_clone.mesh(), msg);
+        //ss.skeletonize();
+        //mesh_clone.color_ = { 1.0f, 0.0f, 0.0f };
+        //mesh_clone.name_ = "Skeleton";
+        //scene.add_model(mesh_clone);
     }
     else
     {
         auto mesh_clone = *scene.get("Skeleton");
         scene.remove_model("Skeleton");
-        SkeletonSolution ss(mesh_clone.mesh(), msg);
-        ss.skeletonize();
-        mesh_clone.name_ = "Skeleton";
-        scene.add_model(mesh_clone);
+        //SkeletonSolution ss(mesh_clone.mesh(), msg);
+        //ss.skeletonize();
+        //mesh_clone.name_ = "Skeleton";
+        //scene.add_model(mesh_clone);
     }
 
     basic_buffer_changed = true;
@@ -949,10 +949,10 @@ void RenderingWidget::Load_Skeleton(const QString& filename)
 
 void RenderingWidget::Main_Solution()
 {
-    OffsetSolution os{ scene, msg };
-    os.offset();
+    //OffsetSolution os{ scene, msg };
+    //os.offset();
 
-    basic_buffer_changed = true;
+    //basic_buffer_changed = true;
 }
 
 // calculate FPS,
